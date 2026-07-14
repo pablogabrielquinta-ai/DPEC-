@@ -3,12 +3,12 @@
    Así las actualizaciones del repo llegan siempre,
    pero la app abre igual sin señal. */
 
-var CACHE = 'dpec-foto-medidor-v1';
+var CACHE = 'dpec-foto-medidor-v3';
 var ARCHIVOS = [
   './dpec_foto_medidor.html',
   './manifest.json',
-  './icon-192.png',
-  './icon-512.png'
+  './icono-192.png',
+  './icono-512.png'
 ];
 
 self.addEventListener('install', function(e){
