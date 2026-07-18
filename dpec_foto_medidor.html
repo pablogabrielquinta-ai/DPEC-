@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#14181D">
 <link rel="manifest" href="manifest.json">
-<link rel="icon" type="image/png" sizes="192x192" href="icono-192.png">
-<link rel="apple-touch-icon" href="icono-192.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
 <title>DPEC · Foto Medidor</title>
 <style>
   :root{
@@ -251,6 +251,11 @@
       </div>
 
       <div class="campo">
+        <label for="lectura">Lectura del medidor (opcional)</label>
+        <input type="text" id="lectura" inputmode="decimal" placeholder="Ej: 04581">
+      </div>
+
+      <div class="campo">
         <label for="descripcion">¿Qué pasa con el medidor?</label>
         <textarea id="descripcion" placeholder="Ej: Medidor con tapa rota, visor empañado, no se puede leer el estado."></textarea>
       </div>
@@ -291,6 +296,7 @@
   var btnDisparo  = document.getElementById('btnDisparo');
   var btnCerrarCam= document.getElementById('btnCerrarCam');
   var inpMedidor  = document.getElementById('medidor');
+  var inpLectura  = document.getElementById('lectura');
   var btnEscanear = document.getElementById('btnEscanear');
   var scanHint    = document.getElementById('scanHint');
   var btnCompartir= document.getElementById('btnCompartir');
@@ -353,6 +359,7 @@
         remesa: selRemesa.value,
         ruta: inpRuta.value,
         medidor: inpMedidor.value,
+        lectura: inpLectura.value,
         desc: txtDesc.value,
         gps: gps,
         fecha: (fechaFoto || new Date()).getTime()
@@ -381,6 +388,7 @@
       if(s.remesa) selRemesa.value = s.remesa;
       poblarRutas(selRemesa.value, s.ruta || null);
       if(s.medidor) inpMedidor.value = s.medidor;
+      if(s.lectura) inpLectura.value = s.lectura;
       if(s.desc)   txtDesc.value = s.desc;
       if(s.gps){ gps = s.gps; chkGps.checked = true;
         gpsEstado.textContent = gps.lat.toFixed(5) + ', ' + gps.lon.toFixed(5);
@@ -558,6 +566,7 @@
   // =============== sello ===============
   inpRuta.addEventListener('change', function(){ guardarMem(); pedirRender(); });
   inpMedidor.addEventListener('input', function(){ pedirRender(); });
+  inpLectura.addEventListener('input', function(){ pedirRender(); });
   txtDesc.addEventListener('input', function(){ guardarMem(); pedirRender(); });
 
   function pedirRender(){
@@ -593,6 +602,11 @@
     var ruta   = inpRuta.value.trim();
     var desc   = txtDesc.value.trim();
     var medidor= inpMedidor.value.trim();
+    var lectura= inpLectura.value.trim();
+    var linea2 = [];
+    if(medidor) linea2.push('MEDIDOR ' + medidor);
+    if(lectura) linea2.push('LECTURA ' + lectura);
+    linea2 = linea2.join('  \u00b7  ');
 
     var pad     = Math.round(w * 0.030);
     var fTit    = Math.round(w * 0.042);
@@ -614,7 +628,7 @@
 
     var alto = pad;
     if(titulo) alto += fTit * interl;
-    if(medidor) alto += fMed * interl;
+    if(linea2) alto += fMed * interl;
     alto += fInfo * interl;
     if(lineasDesc.length) alto += pad*0.4 + lineasDesc.length * fDesc * interl;
     alto += pad * 0.7;
@@ -635,10 +649,10 @@
       y += fTit * interl;
     }
 
-    if(medidor){
+    if(linea2){
       ctx.font = '700 ' + fMed + 'px system-ui, sans-serif';
       ctx.fillStyle = '#FFFFFF';
-      ctx.fillText('MEDIDOR ' + medidor, pad, y);
+      ctx.fillText(linea2, pad, y);
       y += fMed * interl;
     }
 
@@ -694,6 +708,7 @@
     if(selRemesa.value) t.push('Remesa ' + selRemesa.value);
     if(inpRuta.value.trim()) t.push('Ruta ' + inpRuta.value.trim());
     if(inpMedidor.value.trim()) t.push('Medidor ' + inpMedidor.value.trim());
+    if(inpLectura.value.trim()) t.push('Lectura ' + inpLectura.value.trim());
     var linea = t.join(' · ');
     var desc = txtDesc.value.trim();
     return desc ? (linea ? linea + '\n' + desc : desc) : linea;
@@ -715,6 +730,7 @@
   btnNueva.addEventListener('click', function(){
     txtDesc.value = '';
     inpMedidor.value = '';
+    inpLectura.value = '';
     inputFoto.value = '';
     imgOriginal = null;
     borrarSesion();
