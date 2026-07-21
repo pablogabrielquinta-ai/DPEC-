@@ -282,6 +282,14 @@
       </div>
 
       <div class="campo">
+        <label for="modulo">N° módulo telelectura (opcional)</label>
+        <div style="display:flex;gap:8px;">
+          <input type="text" id="modulo" inputmode="numeric" placeholder="Escanealo o escribilo" style="flex:1;">
+          <button type="button" id="btnEscanearMod" class="btn-escanear">|||&nbsp;Escanear</button>
+        </div>
+      </div>
+
+      <div class="campo">
         <label for="lectura">Lectura del medidor (opcional)</label>
         <input type="text" id="lectura" inputmode="decimal" placeholder="Ej: 04581">
       </div>
@@ -328,6 +336,8 @@
   var btnCerrarCam= document.getElementById('btnCerrarCam');
   var inpMedidor  = document.getElementById('medidor');
   var inpLectura  = document.getElementById('lectura');
+  var inpModulo   = document.getElementById('modulo');
+  var btnEscanearMod = document.getElementById('btnEscanearMod');
   var btnLinterna = document.getElementById('btnLinterna');
   var zoomCtl     = document.getElementById('zoomCtl');
   var zoomSlider  = document.getElementById('zoomSlider');
@@ -349,6 +359,7 @@
   var torchOn     = false;
   var zoomMin = 1, zoomMax = 1, baseDist = 0, baseZoom = 1;
   var detector    = null;
+  var scanDestino = null;   // campo que recibe el código escaneado
   var MAX_LADO    = 1600;
   var RUTAS = {"1":["101","128","134","139","153","157","162","163","166","171","176","181","185","189","194","195","198","202","207","211","215","219","223","227","231","235","239","244","249","254","259"],"2":["264","269","274","302","307","311","315","319","323","327","331","335","339","343","347","351","355","359","364","369","371","378","383","389","394","398"],"3":["500","505","510","515","520","525","530","535","540","545","546","550","555","560","565","570","575","580","585","590","596","599","600","605","610","612","615","620","625","626","628","630","635","640","645","648","649","650"],"4":["660","661","662","665","666","670","675","680","685","691","693","694","695","696","697","698","699","700","704","708","712","716","720","724","727","728","732","736","737","740","744","748","752","753","756","760","761","764","768","772","776","780","784","788","790","791","796","799"],"5":["401","402","403","404","408","412","416","421","422","424","425","428","432","436","441","444","448","452","454","456","460","461","462","464","465","468","469","472","476","481","484","488","492","496","901","902","904","905","906","908","912","913","914","915","916","919","920","921","922","924","925","926","928","929","930"],"6":["932","936","941","946","951","955","961","966","971","976","981","986","991","1001","1004","1008","1012","1016","1021","1024","1028","1032","1036","1041","1046","1051","1054","1061","1065","1071","1075","1081","1085","1086","1087","1091","1092","1093","1094","1095","1096","1097"],"7":["801","804","808","812","816","821","824","828","829","830","831","832","837","839","840","841","842","843","844","845","846","849","853","857","1205","1206","1207","1208","1209","1210","1211","1212","1213","1214","1215","1216","1217","1218","1219","1220","1220","1221","1225","1226","1227","1228","1229","1230","1231","1232","1233","1234","1235","1236","1237","1240","1241","1242","1243","1244","1245","1246","1247","1248","1249","1252","1256","1257","1258","1259","1262","1263","1264","1266","1272","1273","1276","1279","1281","1282"],"8":["861","863","866","870","871","872","873","876","877","878","882","883","884","885","886","887","888","889","890","892","893","1116","1124","1128","1132","1136","1145","1151","1155","1161","1163","1164","1165","1166","1167","1168","1169","1170","1171","1172","1173","1174","1175"]};
 
@@ -398,6 +409,7 @@
         ruta: inpRuta.value,
         medidor: inpMedidor.value,
         lectura: inpLectura.value,
+        modulo: inpModulo.value,
         desc: txtDesc.value,
         gps: gps,
         fecha: (fechaFoto || new Date()).getTime()
@@ -427,6 +439,7 @@
       poblarRutas(selRemesa.value, s.ruta || null);
       if(s.medidor) inpMedidor.value = s.medidor;
       if(s.lectura) inpLectura.value = s.lectura;
+      if(s.modulo) inpModulo.value = s.modulo;
       if(s.desc)   txtDesc.value = s.desc;
       if(s.gps){ gps = s.gps; chkGps.checked = true;
         gpsEstado.textContent = gps.lat.toFixed(5) + ', ' + gps.lon.toFixed(5);
@@ -607,14 +620,17 @@
   video.addEventListener('touchend', function(){ baseDist = 0; }, {passive:true});
 
   // =============== escáner de código de barras ===============
-  btnEscanear.addEventListener('click', function(){
+  function pedirEscaneo(destino){
     ocultarAviso();
     if(!('BarcodeDetector' in window)){
       mostrarAviso('Este navegador no tiene lector de códigos integrado. Escribí el número a mano, o abrí la app en Chrome.');
       return;
     }
+    scanDestino = destino;
     abrirCamara('scan');
-  });
+  }
+  btnEscanear.addEventListener('click', function(){ pedirEscaneo(inpMedidor); });
+  btnEscanearMod.addEventListener('click', function(){ pedirEscaneo(inpModulo); });
 
   function iniciarEscaneo(){
     try{
@@ -631,7 +647,7 @@
         if(!val) return;
         clearInterval(scanTimer); scanTimer = null;
         if(navigator.vibrate) navigator.vibrate(120);
-        inpMedidor.value = val;
+        (scanDestino || inpMedidor).value = val;
         cerrarCamara();
         mostrarPantalla(imgOriginal ? 'edicion' : 'inicio');
         pedirRender();
@@ -693,6 +709,7 @@
   inpRuta.addEventListener('change', function(){ guardarMem(); pedirRender(); });
   inpMedidor.addEventListener('input', function(){ pedirRender(); });
   inpLectura.addEventListener('input', function(){ pedirRender(); });
+  inpModulo.addEventListener('input', function(){ pedirRender(); });
   txtDesc.addEventListener('input', function(){ guardarMem(); pedirRender(); });
 
   function pedirRender(){
@@ -729,9 +746,11 @@
     var desc   = txtDesc.value.trim();
     var medidor= inpMedidor.value.trim();
     var lectura= inpLectura.value.trim();
+    var modulo = inpModulo.value.trim();
     var linea2 = [];
     if(medidor) linea2.push('MEDIDOR ' + medidor);
     if(lectura) linea2.push('LECTURA ' + lectura);
+    if(modulo)  linea2.push('M\u00d3DULO ' + modulo);
     linea2 = linea2.join('  \u00b7  ');
 
     var pad     = Math.round(w * 0.030);
@@ -754,7 +773,12 @@
 
     var alto = pad;
     if(titulo) alto += fTit * interl;
-    if(linea2) alto += fMed * interl;
+    var lineas2 = [];
+    if(linea2){
+      ctx.font = '700 ' + fMed + 'px system-ui, sans-serif';
+      lineas2 = envolver(ctx, linea2, w - pad*2);
+      alto += lineas2.length * fMed * interl;
+    }
     alto += fInfo * interl;
     if(lineasDesc.length) alto += pad*0.4 + lineasDesc.length * fDesc * interl;
     alto += pad * 0.7;
@@ -775,11 +799,13 @@
       y += fTit * interl;
     }
 
-    if(linea2){
+    if(lineas2.length){
       ctx.font = '700 ' + fMed + 'px system-ui, sans-serif';
       ctx.fillStyle = '#FFFFFF';
-      ctx.fillText(linea2, pad, y);
-      y += fMed * interl;
+      for(var j=0;j<lineas2.length;j++){
+        ctx.fillText(lineas2[j], pad, y);
+        y += fMed * interl;
+      }
     }
 
     ctx.font = '600 ' + fInfo + 'px ui-monospace, Menlo, monospace';
@@ -835,6 +861,7 @@
     if(inpRuta.value.trim()) t.push('Ruta ' + inpRuta.value.trim());
     if(inpMedidor.value.trim()) t.push('Medidor ' + inpMedidor.value.trim());
     if(inpLectura.value.trim()) t.push('Lectura ' + inpLectura.value.trim());
+    if(inpModulo.value.trim()) t.push('M\u00f3dulo ' + inpModulo.value.trim());
     var linea = t.join(' · ');
     var desc = txtDesc.value.trim();
     return desc ? (linea ? linea + '\n' + desc : desc) : linea;
@@ -857,6 +884,7 @@
     txtDesc.value = '';
     inpMedidor.value = '';
     inpLectura.value = '';
+    inpModulo.value = '';
     inputFoto.value = '';
     imgOriginal = null;
     borrarSesion();
