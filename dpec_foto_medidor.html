@@ -254,6 +254,17 @@
   <!-- edición -->
   <div id="edicion">
     <div class="canvas-frame"><canvas id="canvas"></canvas></div>
+    <div class="canvas-frame" id="frame2" style="margin-top:10px;display:none;position:relative;">
+      <canvas id="canvas2"></canvas>
+      <button type="button" id="btnQuitar2" aria-label="Quitar segunda foto"
+        style="position:absolute;top:8px;right:8px;width:38px;height:38px;border-radius:50%;
+               background:rgba(0,0,0,0.6);border:1px solid rgba(255,255,255,0.35);
+               color:#fff;font-size:16px;cursor:pointer;">✕</button>
+    </div>
+    <div id="filaFoto2" style="display:flex;gap:8px;margin-top:10px;">
+      <button type="button" id="btnFoto2" class="btn-galeria" style="margin-top:0;flex:2;">📷 ＋ Agregar 2ª foto</button>
+      <button type="button" id="btnFoto2Gal" class="btn-galeria" style="margin-top:0;flex:1;">🖼️ Galería</button>
+    </div>
 
     <form id="datos" onsubmit="return false;">
       <div class="fila" style="margin-top:16px;">
@@ -324,6 +335,12 @@
   var inputFoto   = document.getElementById('inputFoto');
   var canvas      = document.getElementById('canvas');
   var ctx         = canvas.getContext('2d');
+  var canvas2     = document.getElementById('canvas2');
+  var frame2      = document.getElementById('frame2');
+  var filaFoto2   = document.getElementById('filaFoto2');
+  var btnFoto2    = document.getElementById('btnFoto2');
+  var btnFoto2Gal = document.getElementById('btnFoto2Gal');
+  var btnQuitar2  = document.getElementById('btnQuitar2');
   var selRemesa   = document.getElementById('remesa');
   var inpRuta     = document.getElementById('ruta');
   var txtDesc     = document.getElementById('descripcion');
@@ -349,7 +366,7 @@
   var aviso       = document.getElementById('aviso');
 
   var stream      = null;   // MediaStream de la cámara
-  var imgOriginal = null;   // canvas offscreen con la foto lista
+  var fotos       = [];     // hasta 2 fotos (canvas) de la novedad
   var fechaFoto   = null;   // Date de la captura
   var gps         = null;   // {lat, lon} o null
   var timerRender = null;
@@ -360,8 +377,8 @@
   var zoomMin = 1, zoomMax = 1, baseDist = 0, baseZoom = 1;
   var detector    = null;
   var scanDestino = null;   // campo que recibe el código escaneado
-  var blobListo   = null;   // JPG final pre-armado para compartir al instante
-  var fotoDataURL = null;   // foto codificada una sola vez para el respaldo
+  var blobs       = [];     // JPGs finales pre-armados para compartir al instante
+  var fotoDataURL = null;   // foto 1 codificada para el respaldo anti-cierre
   var MAX_LADO    = 1600;
   var RUTAS = {"1":["101","128","134","139","153","157","162","163","166","171","176","181","185","189","194","195","198","202","207","211","215","219","223","227","231","235","239","244","249","254","259"],"2":["264","269","274","302","307","311","315","319","323","327","331","335","339","343","347","351","355","359","364","369","371","378","383","389","394","398"],"3":["500","505","510","515","520","525","530","535","540","545","546","550","555","560","565","570","575","580","585","590","596","599","600","605","610","612","615","620","625","626","628","630","635","640","645","648","649","650"],"4":["660","661","662","665","666","670","675","680","685","691","693","694","695","696","697","698","699","700","704","708","712","716","720","724","727","728","732","736","737","740","744","748","752","753","756","760","761","764","768","772","776","780","784","788","790","791","796","799"],"5":["401","402","403","404","408","412","416","421","422","424","425","428","432","436","441","444","448","452","454","456","460","461","462","464","465","468","469","472","476","481","484","488","492","496","901","902","904","905","906","908","912","913","914","915","916","919","920","921","922","924","925","926","928","929","930"],"6":["932","936","941","946","951","955","961","966","971","976","981","986","991","1001","1004","1008","1012","1016","1021","1024","1028","1032","1036","1041","1046","1051","1054","1061","1065","1071","1075","1081","1085","1086","1087","1091","1092","1093","1094","1095","1096","1097"],"7":["801","804","808","812","816","821","824","828","829","830","831","832","837","839","840","841","842","843","844","845","846","849","853","857","1205","1206","1207","1208","1209","1210","1211","1212","1213","1214","1215","1216","1217","1218","1219","1220","1220","1221","1225","1226","1227","1228","1229","1230","1231","1232","1233","1234","1235","1236","1237","1240","1241","1242","1243","1244","1245","1246","1247","1248","1249","1252","1256","1257","1258","1259","1262","1263","1264","1266","1272","1273","1276","1279","1281","1282"],"8":["861","863","866","870","871","872","873","876","877","878","882","883","884","885","886","887","888","889","890","892","893","1116","1124","1128","1132","1136","1145","1151","1155","1161","1163","1164","1165","1166","1167","1168","1169","1170","1171","1172","1173","1174","1175"]};
 
@@ -402,14 +419,17 @@
   }
 
   function prepararBlob(){
-    blobListo = null;
-    if(!imgOriginal) return;
-    canvas.toBlob(function(b){ blobListo = b; }, 'image/jpeg', 0.88);
+    blobs = [];
+    if(!fotos.length) return;
+    var lienzos = [canvas, canvas2].slice(0, fotos.length);
+    lienzos.forEach(function(c, i){
+      c.toBlob(function(b){ blobs[i] = b; }, 'image/jpeg', 0.88);
+    });
   }
 
   // =============== sesión (recuperación anti-cierre) ===============
   function guardarSesion(){
-    if(!imgOriginal || !fotoDataURL) return;
+    if(!fotos.length || !fotoDataURL) return;
     try{
       localStorage.setItem(CLAVE_SESION, JSON.stringify({
         foto: fotoDataURL,
@@ -441,7 +461,7 @@
       var off = document.createElement('canvas');
       off.width = img.width; off.height = img.height;
       off.getContext('2d').drawImage(img, 0, 0);
-      imgOriginal = off;
+      fotos = [off];
       fotoDataURL = s.foto;
       fechaFoto = new Date(s.fecha);
       if(s.remesa) selRemesa.value = s.remesa;
@@ -525,7 +545,7 @@
 
   btnCerrarCam.addEventListener('click', function(){
     cerrarCamara();
-    mostrarPantalla(imgOriginal ? 'edicion' : 'inicio');
+    mostrarPantalla(fotos.length ? 'edicion' : 'inicio');
   });
 
   btnDisparo.addEventListener('click', function(){
@@ -537,9 +557,12 @@
     var off = document.createElement('canvas');
     off.width = cw; off.height = ch;
     off.getContext('2d').drawImage(video, 0, 0, cw, ch);
-    imgOriginal = off;
-    fotoDataURL = off.toDataURL('image/jpeg', 0.8);
-    fechaFoto = new Date();
+    if(fotos.length >= 2){ fotos.length = 1; }
+    fotos.push(off);
+    if(fotos.length === 1){
+      fotoDataURL = off.toDataURL('image/jpeg', 0.8);
+      fechaFoto = new Date();
+    }
     cerrarCamara();
     mostrarEdicion();
     if(chkGps.checked) pedirGps();
@@ -649,7 +672,7 @@
       detector = new BarcodeDetector({ formats: ['code_128','code_39','itf','ean_13','ean_8','upc_a','upc_e','codabar','qr_code','data_matrix'] });
     }catch(e){
       try{ detector = new BarcodeDetector(); }
-      catch(e2){ mostrarAviso('No se pudo iniciar el lector de códigos.'); cerrarCamara(); mostrarPantalla(imgOriginal ? 'edicion' : 'inicio'); return; }
+      catch(e2){ mostrarAviso('No se pudo iniciar el lector de códigos.'); cerrarCamara(); mostrarPantalla(fotos.length ? 'edicion' : 'inicio'); return; }
     }
     scanTimer = setInterval(function(){
       if(!stream || !video.videoWidth) return;
@@ -661,7 +684,7 @@
         if(navigator.vibrate) navigator.vibrate(120);
         (scanDestino || inpMedidor).value = val;
         cerrarCamara();
-        mostrarPantalla(imgOriginal ? 'edicion' : 'inicio');
+        mostrarPantalla(fotos.length ? 'edicion' : 'inicio');
         pedirRender();
       }).catch(function(){});
     }, 300);
@@ -669,11 +692,16 @@
 
   // =============== galería (plan B) ===============
   btnGaleria.addEventListener('click', function(){ inputFoto.click(); });
+  btnFoto2.addEventListener('click', function(){ abrirCamara('foto'); });
+  btnFoto2Gal.addEventListener('click', function(){ inputFoto.click(); });
+  btnQuitar2.addEventListener('click', function(){
+    fotos.length = 1;
+    render(); guardarSesion(); prepararBlob();
+  });
 
   inputFoto.addEventListener('change', function(){
     var file = inputFoto.files && inputFoto.files[0];
     if(!file) return;
-    fechaFoto = new Date();
     var url = URL.createObjectURL(file);
     var img = new Image();
     img.onload = function(){
@@ -684,8 +712,13 @@
       var off = document.createElement('canvas');
       off.width = cw; off.height = ch;
       off.getContext('2d').drawImage(img, 0, 0, cw, ch);
-      imgOriginal = off;
-      fotoDataURL = off.toDataURL('image/jpeg', 0.8);
+      if(fotos.length >= 2){ fotos.length = 1; }
+      fotos.push(off);
+      if(fotos.length === 1){
+        fotoDataURL = off.toDataURL('image/jpeg', 0.8);
+        fechaFoto = new Date();
+      }
+      inputFoto.value = '';
       mostrarEdicion();
       if(chkGps.checked) pedirGps();
       render();
@@ -750,10 +783,22 @@
   }
 
   function render(){
-    if(!imgOriginal) return;
-    var w = imgOriginal.width, h = imgOriginal.height;
-    canvas.width = w; canvas.height = h;
-    ctx.drawImage(imgOriginal, 0, 0);
+    if(!fotos.length) return;
+    renderUna(canvas, fotos[0]);
+    if(fotos[1]){
+      frame2.style.display = 'block';
+      renderUna(canvas2, fotos[1]);
+    } else {
+      frame2.style.display = 'none';
+    }
+    filaFoto2.style.display = (fotos.length < 2) ? 'flex' : 'none';
+  }
+
+  function renderUna(cv, foto){
+    var ctx = cv.getContext('2d');
+    var w = foto.width, h = foto.height;
+    cv.width = w; cv.height = h;
+    ctx.drawImage(foto, 0, 0);
 
     var remesa = selRemesa.value.trim();
     var ruta   = inpRuta.value.trim();
@@ -840,39 +885,54 @@
 
   // =============== compartir ===============
   btnCompartir.addEventListener('click', function(){
-    if(!imgOriginal){ mostrarAviso('Primero sacá una foto.'); return; }
+    if(!fotos.length){ mostrarAviso('Primero sac\u00e1 una foto.'); return; }
     btnCompartir.disabled = true;
     btnCompartir.textContent = 'Preparando\u2026';
 
-    function continuar(blob){
+    function continuar(lista){
       btnCompartir.disabled = false;
       btnCompartir.textContent = 'Compartir \u27a4 WhatsApp';
-      if(!blob){ mostrarAviso('No se pudo generar la imagen.'); return; }
-
-      var nombre = 'medidor';
-      if(selRemesa.value) nombre += '_R' + selRemesa.value;
-      if(inpRuta.value.trim()) nombre += '_ruta' + inpRuta.value.trim();
-      nombre += '.jpg';
-
-      var file = new File([blob], nombre, { type:'image/jpeg' });
+      for(var i=0;i<lista.length;i++){
+        if(!lista[i]){ mostrarAviso('No se pudo generar la imagen.'); return; }
+      }
+      var base = 'medidor';
+      if(selRemesa.value) base += '_R' + selRemesa.value;
+      if(inpRuta.value.trim()) base += '_ruta' + inpRuta.value.trim();
+      var files = [];
+      for(var i=0;i<lista.length;i++){
+        var suf = (lista.length > 1) ? ('_' + (i+1)) : '';
+        files.push(new File([lista[i]], base + suf + '.jpg', { type:'image/jpeg' }));
+      }
       var texto = armarTexto();
 
-      if(navigator.canShare && navigator.canShare({ files:[file] })){
-        navigator.share({ files:[file], text: texto })
+      if(navigator.canShare && navigator.canShare({ files: files })){
+        navigator.share({ files: files, text: texto })
           .then(function(){ borrarSesion(); })
           .catch(function(err){
-            if(err && err.name !== 'AbortError') descargar(blob, nombre);
+            if(err && err.name !== 'AbortError'){
+              for(var j=0;j<files.length;j++) descargar(lista[j], files[j].name);
+            }
           });
       } else {
-        descargar(blob, nombre);
-        mostrarAviso('Este navegador no puede compartir directo. Se descargó la foto sellada — mandala al grupo desde WhatsApp.');
+        for(var j=0;j<files.length;j++) descargar(lista[j], files[j].name);
+        mostrarAviso('Este navegador no puede compartir directo. Se descargaron las fotos selladas \u2014 mandalas al grupo desde WhatsApp.');
       }
     }
-    if(blobListo){
-      continuar(blobListo);
+
+    var completos = (blobs.length === fotos.length);
+    for(var k=0;k<blobs.length;k++){ if(!blobs[k]) completos = false; }
+    if(completos){
+      continuar(blobs.slice());
     } else {
       render();
-      canvas.toBlob(continuar, 'image/jpeg', 0.88);
+      var lienzos = [canvas, canvas2].slice(0, fotos.length);
+      var out = [], hechos = 0;
+      lienzos.forEach(function(c, i){
+        c.toBlob(function(b){
+          out[i] = b; hechos++;
+          if(hechos === lienzos.length) continuar(out);
+        }, 'image/jpeg', 0.88);
+      });
     }
   });
 
@@ -906,9 +966,10 @@
     inpMedidor.value = '';
     inpLectura.value = '';
     inpModulo.value = '';
-    blobListo = null; fotoDataURL = null;
+    blobs = []; fotoDataURL = null;
     inputFoto.value = '';
-    imgOriginal = null;
+    fotos = [];
+    frame2.style.display = 'none';
     borrarSesion();
     ocultarAviso();
     abrirCamara('foto');

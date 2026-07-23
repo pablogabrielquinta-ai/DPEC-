@@ -3,7 +3,7 @@
    Así las actualizaciones del repo llegan siempre,
    pero la app abre igual sin señal. */
 
-var CACHE = 'dpec-foto-medidor-v8';
+var CACHE = 'dpec-foto-medidor-v9';
 var ARCHIVOS = [
   './dpec_foto_medidor.html',
   './manifest.json',
