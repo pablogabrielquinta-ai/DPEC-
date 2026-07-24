@@ -3,7 +3,7 @@
    Así las actualizaciones del repo llegan siempre,
    pero la app abre igual sin señal. */
 
-var CACHE = 'dpec-foto-medidor-v9';
+var CACHE = 'dpec-foto-medidor-v10';
 var ARCHIVOS = [
   './dpec_foto_medidor.html',
   './manifest.json',
@@ -32,12 +32,10 @@ self.addEventListener('fetch', function(e){
   if(e.request.method !== 'GET') return;
   e.respondWith(
     fetch(e.request).then(function(resp){
-      // guardar copia fresca en caché
       var copia = resp.clone();
       caches.open(CACHE).then(function(c){ c.put(e.request, copia); });
       return resp;
     }).catch(function(){
-      // sin señal: servir desde caché
       return caches.match(e.request);
     })
   );

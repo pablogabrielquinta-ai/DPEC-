@@ -945,7 +945,11 @@
     if(inpModulo.value.trim()) t.push('M\u00f3dulo ' + inpModulo.value.trim());
     var linea = t.join(' · ');
     var desc = txtDesc.value.trim();
-    return desc ? (linea ? linea + '\n' + desc : desc) : linea;
+    var partes = [];
+    if(linea) partes.push(linea);
+    if(desc) partes.push(desc);
+    if(gps) partes.push('Ubicaci\u00f3n: https://maps.google.com/?q=' + gps.lat + ',' + gps.lon);
+    return partes.join('\n');
   }
 
   function descargar(blob, nombre){
