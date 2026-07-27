@@ -447,7 +447,7 @@
     if(!fotos.length) return;
     var lienzos = [canvas, canvas2].slice(0, fotos.length);
     lienzos.forEach(function(c, i){
-      c.toBlob(function(b){ blobs[i] = b; }, 'image/jpeg', 0.88);
+      c.toBlob(function(b){ blobs[i] = b; }, 'image/jpeg', 0.80);
     });
   }
 
@@ -955,7 +955,7 @@
         c.toBlob(function(b){
           out[i] = b; hechos++;
           if(hechos === lienzos.length) continuar(out);
-        }, 'image/jpeg', 0.88);
+        }, 'image/jpeg', 0.80);
       });
     }
   });
