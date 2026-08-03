@@ -1,9 +1,8 @@
 /* DPEC Foto Medidor - service worker
-   Estrategia: red primero, caché de respaldo.
-   Así las actualizaciones del repo llegan siempre,
-   pero la app abre igual sin señal. */
+   Estrategia: caché primero (abre al toque), actualiza en segundo
+   plano. La próxima vez que se abra ya está la versión nueva. */
 
-var CACHE = 'dpec-foto-medidor-v13';
+var CACHE = 'dpec-foto-medidor-v14';
 var ARCHIVOS = [
   './dpec_foto_medidor.html',
   './manifest.json',
@@ -31,12 +30,15 @@ self.addEventListener('activate', function(e){
 self.addEventListener('fetch', function(e){
   if(e.request.method !== 'GET') return;
   e.respondWith(
-    fetch(e.request).then(function(resp){
-      var copia = resp.clone();
-      caches.open(CACHE).then(function(c){ c.put(e.request, copia); });
-      return resp;
-    }).catch(function(){
-      return caches.match(e.request);
+    caches.match(e.request).then(function(guardado){
+      var actualizar = fetch(e.request).then(function(resp){
+        var copia = resp.clone();
+        caches.open(CACHE).then(function(c){ c.put(e.request, copia); });
+        return resp;
+      }).catch(function(){ return guardado; });
+      // si hay copia guardada, se muestra al toque; la version nueva
+      // (si la hay) queda lista en caché para la proxima apertura
+      return guardado || actualizar;
     })
   );
 });
