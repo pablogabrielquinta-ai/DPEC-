@@ -83,12 +83,6 @@
     cursor:pointer;flex-shrink:0;
   }
   .btn-disparo:active{transform:scale(0.93);}
-  .scan-hint{
-    position:absolute;left:0;right:0;top:0;
-    padding:10px;background:rgba(0,0,0,0.6);
-    color:var(--accent);font-size:13px;font-weight:700;
-    text-align:center;display:none;line-height:1.3;
-  }
   .foco-ring{
     position:absolute;width:70px;height:70px;
     border:2px solid var(--accent);border-radius:50%;
@@ -115,12 +109,6 @@
   }
   .zoom-ctl span{color:#fff;font-weight:800;font-size:16px;line-height:1;}
   .zoom-ctl input{flex:1;accent-color:var(--accent);height:24px;margin:0;}
-  .btn-escanear{
-    background:var(--panel2);border:1px solid var(--line);
-    color:var(--accent);border-radius:10px;
-    font-size:13px;font-weight:700;font-family:inherit;
-    padding:0 14px;cursor:pointer;white-space:nowrap;
-  }
   .btn-cerrar-cam{
     background:var(--panel2);border:1px solid var(--line);
     color:var(--text);border-radius:12px;
@@ -251,7 +239,6 @@
       <div class="zoom-ctl" id="zoomCtl">
         <span>−</span><input type="range" id="zoomSlider"><span>+</span>
       </div>
-      <div class="scan-hint" id="scanHint">Apuntá al código de barras del medidor</div>
     </div>
     <div class="barra-disparo">
       <button class="btn-cerrar-cam" id="btnCerrarCam" type="button">Cancelar</button>
@@ -289,22 +276,6 @@
           <select id="ruta">
             <option value="">—</option>
           </select>
-        </div>
-      </div>
-
-      <div class="campo">
-        <label for="medidor">N° de medidor (opcional)</label>
-        <div style="display:flex;gap:8px;">
-          <input type="text" id="medidor" inputmode="numeric" placeholder="Escanealo o escribilo" style="flex:1;">
-          <button type="button" id="btnEscanear" class="btn-escanear">|||&nbsp;Escanear</button>
-        </div>
-      </div>
-
-      <div class="campo">
-        <label for="modulo">N° módulo telelectura (opcional)</label>
-        <div style="display:flex;gap:8px;">
-          <input type="text" id="modulo" inputmode="numeric" placeholder="Escanealo o escribilo" style="flex:1;">
-          <button type="button" id="btnEscanearMod" class="btn-escanear">|||&nbsp;Escanear</button>
         </div>
       </div>
 
@@ -367,16 +338,11 @@
   var btnGaleria  = document.getElementById('btnGaleria');
   var btnDisparo  = document.getElementById('btnDisparo');
   var btnCerrarCam= document.getElementById('btnCerrarCam');
-  var inpMedidor  = document.getElementById('medidor');
   var inpLectura  = document.getElementById('lectura');
-  var inpModulo   = document.getElementById('modulo');
-  var btnEscanearMod = document.getElementById('btnEscanearMod');
   var btnLinterna = document.getElementById('btnLinterna');
   var zoomCtl     = document.getElementById('zoomCtl');
   var zoomSlider  = document.getElementById('zoomSlider');
   var focoRing    = document.getElementById('focoRing');
-  var btnEscanear = document.getElementById('btnEscanear');
-  var scanHint    = document.getElementById('scanHint');
   var btnCompartir= document.getElementById('btnCompartir');
   var btnNueva    = document.getElementById('btnNueva');
   var aviso       = document.getElementById('aviso');
@@ -386,13 +352,9 @@
   var fechaFoto   = null;   // Date de la captura
   var gps         = null;   // {lat, lon} o null
   var timerRender = null;
-  var modoCamara  = 'foto';   // 'foto' o 'scan'
-  var scanTimer   = null;
   var track       = null;
   var torchOn     = false;
   var zoomMin = 1, zoomMax = 1, baseDist = 0, baseZoom = 1;
-  var detector    = null;
-  var scanDestino = null;   // campo que recibe el código escaneado
   var blobs       = [];     // JPGs finales pre-armados para compartir al instante
   var fotoDataURL = null;   // foto 1 codificada para el respaldo anti-cierre
   var MAX_LADO    = 1600;
@@ -451,9 +413,7 @@
         foto: fotoDataURL,
         remesa: selRemesa.value,
         ruta: inpRuta.value,
-        medidor: inpMedidor.value,
         lectura: inpLectura.value,
-        modulo: inpModulo.value,
         desc: txtDesc.value,
         gps: gps,
         fecha: (fechaFoto || new Date()).getTime()
@@ -482,9 +442,7 @@
       fechaFoto = new Date(s.fecha);
       if(s.remesa) selRemesa.value = s.remesa;
       poblarRutas(selRemesa.value, s.ruta || null);
-      if(s.medidor) inpMedidor.value = s.medidor;
       if(s.lectura) inpLectura.value = s.lectura;
-      if(s.modulo) inpModulo.value = s.modulo;
       if(s.desc)   txtDesc.value = s.desc;
       if(s.gps){ gps = s.gps; chkGps.checked = true;
         gpsEstado.textContent = gps.lat.toFixed(5) + ', ' + gps.lon.toFixed(5);
@@ -510,10 +468,9 @@
   function mostrarEdicion(){ ocultarAviso(); mostrarPantalla('edicion'); }
 
   // =============== cámara en vivo ===============
-  btnAbrirCam.addEventListener('click', function(){ abrirCamara('foto'); });
+  btnAbrirCam.addEventListener('click', abrirCamara);
 
-  function abrirCamara(modo){
-    modoCamara = modo || 'foto';
+  function abrirCamara(){
     ocultarAviso();
     if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
       sinCamaraEnVivo('Este navegador no permite la cámara en vivo.');
@@ -525,12 +482,8 @@
     }).then(function(s){
       stream = s;
       video.srcObject = s;
-      var esScan = (modoCamara === 'scan');
-      btnDisparo.style.display = esScan ? 'none' : '';
-      scanHint.style.display   = esScan ? 'block' : 'none';
       mostrarPantalla('camara');
       setTimeout(configurarControlesCamara, 500);
-      if(esScan) iniciarEscaneo();
     }).catch(function(err){
       if(err && (err.name === 'NotAllowedError' || err.name === 'SecurityError')){
         if(location.protocol === 'file:'){
@@ -547,7 +500,6 @@
   function sinCamaraEnVivo(msg){ mostrarAviso(msg); }
 
   function cerrarCamara(){
-    clearInterval(scanTimer); scanTimer = null;
     track = null; torchOn = false;
     btnLinterna.classList.remove('activa');
     btnLinterna.style.display = 'none';
@@ -670,45 +622,9 @@
   }, {passive:false});
   video.addEventListener('touchend', function(){ baseDist = 0; }, {passive:true});
 
-  // =============== escáner de código de barras ===============
-  function pedirEscaneo(destino){
-    ocultarAviso();
-    if(!('BarcodeDetector' in window)){
-      mostrarAviso('Este navegador no tiene lector de códigos integrado. Escribí el número a mano, o abrí la app en Chrome.');
-      return;
-    }
-    scanDestino = destino;
-    abrirCamara('scan');
-  }
-  btnEscanear.addEventListener('click', function(){ pedirEscaneo(inpMedidor); });
-  btnEscanearMod.addEventListener('click', function(){ pedirEscaneo(inpModulo); });
-
-  function iniciarEscaneo(){
-    try{
-      detector = new BarcodeDetector({ formats: ['code_128','code_39','itf','ean_13','ean_8','upc_a','upc_e','codabar','qr_code','data_matrix'] });
-    }catch(e){
-      try{ detector = new BarcodeDetector(); }
-      catch(e2){ mostrarAviso('No se pudo iniciar el lector de códigos.'); cerrarCamara(); mostrarPantalla(fotos.length ? 'edicion' : 'inicio'); return; }
-    }
-    scanTimer = setInterval(function(){
-      if(!stream || !video.videoWidth) return;
-      detector.detect(video).then(function(codigos){
-        if(!codigos || !codigos.length) return;
-        var val = (codigos[0].rawValue || '').trim();
-        if(!val) return;
-        clearInterval(scanTimer); scanTimer = null;
-        if(navigator.vibrate) navigator.vibrate(120);
-        (scanDestino || inpMedidor).value = val;
-        cerrarCamara();
-        mostrarPantalla(fotos.length ? 'edicion' : 'inicio');
-        pedirRender();
-      }).catch(function(){});
-    }, 300);
-  }
-
   // =============== galería (plan B) ===============
   btnGaleria.addEventListener('click', function(){ inputFoto.click(); });
-  btnFoto2.addEventListener('click', function(){ abrirCamara('foto'); });
+  btnFoto2.addEventListener('click', abrirCamara);
   btnFoto2Gal.addEventListener('click', function(){ inputFoto.click(); });
   btnQuitar2.addEventListener('click', function(){
     fotos.length = 1;
@@ -770,9 +686,7 @@
 
   // =============== sello ===============
   inpRuta.addEventListener('change', function(){ guardarMem(); pedirRender(); });
-  inpMedidor.addEventListener('input', function(){ pedirRender(); });
   inpLectura.addEventListener('input', function(){ pedirRender(); });
-  inpModulo.addEventListener('input', function(){ pedirRender(); });
   txtDesc.addEventListener('input', function(){ guardarMem(); pedirRender(); });
 
   document.getElementById('chipsNovedad').addEventListener('click', function(ev){
@@ -828,14 +742,8 @@
     var remesa = selRemesa.value.trim();
     var ruta   = inpRuta.value.trim();
     var desc   = txtDesc.value.trim();
-    var medidor= inpMedidor.value.trim();
     var lectura= inpLectura.value.trim();
-    var modulo = inpModulo.value.trim();
-    var linea2 = [];
-    if(medidor) linea2.push('MEDIDOR ' + medidor);
-    if(lectura) linea2.push('LECTURA ' + lectura);
-    if(modulo)  linea2.push('M\u00d3DULO ' + modulo);
-    linea2 = linea2.join('  \u00b7  ');
+    var linea2 = lectura ? ('LECTURA ' + lectura) : '';
 
     var pad     = Math.round(w * 0.030);
     var fTit    = Math.round(w * 0.042);
@@ -969,9 +877,7 @@
     var t = [];
     if(selRemesa.value) t.push('Remesa ' + selRemesa.value);
     if(inpRuta.value.trim()) t.push('Ruta ' + inpRuta.value.trim());
-    if(inpMedidor.value.trim()) t.push('Medidor ' + inpMedidor.value.trim());
     if(inpLectura.value.trim()) t.push('Lectura ' + inpLectura.value.trim());
-    if(inpModulo.value.trim()) t.push('M\u00f3dulo ' + inpModulo.value.trim());
     var linea = t.join(' · ');
     var desc = txtDesc.value.trim();
     return desc ? (linea ? linea + '\n' + desc : desc) : linea;
@@ -992,16 +898,14 @@
   // =============== nueva foto ===============
   function iniciarNuevaFoto(){
     txtDesc.value = '';
-    inpMedidor.value = '';
     inpLectura.value = '';
-    inpModulo.value = '';
     blobs = []; fotoDataURL = null;
     inputFoto.value = '';
     fotos = [];
     frame2.style.display = 'none';
     borrarSesion();
     ocultarAviso();
-    abrirCamara('foto');
+    abrirCamara();
   }
   btnNueva.addEventListener('click', iniciarNuevaFoto);
 
