@@ -164,6 +164,14 @@
     background-repeat:no-repeat;
     background-position:right 12px center;
   }
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px;}
+  .chip{
+    background:var(--panel2);border:1px solid var(--line);
+    color:var(--text);border-radius:20px;
+    font-size:13px;font-weight:700;font-family:inherit;
+    padding:8px 14px;cursor:pointer;white-space:nowrap;
+  }
+  .chip:active{background:var(--accent);color:var(--accent-dark);border-color:var(--accent);}
   .chk{
     display:flex;align-items:center;gap:10px;
     background:var(--panel);border:1px solid var(--line);
@@ -307,6 +315,14 @@
 
       <div class="campo">
         <label for="descripcion">¿Qué pasa con el medidor?</label>
+        <div class="chips" id="chipsNovedad">
+          <button type="button" class="chip" data-txt="No imp">No imp</button>
+          <button type="button" class="chip" data-txt="Alta">Alta</button>
+          <button type="button" class="chip" data-txt="Apagado">Apagado</button>
+          <button type="button" class="chip" data-txt="Exceso de consumo">Exceso de consumo</button>
+          <button type="button" class="chip" data-txt="45/5 primera vez">45/5 primera vez</button>
+          <button type="button" class="chip" data-txt="Ver baja">Ver baja</button>
+        </div>
         <textarea id="descripcion" placeholder="Ej: Medidor con tapa rota, visor empañado, no se puede leer el estado."></textarea>
       </div>
 
@@ -759,6 +775,15 @@
   inpModulo.addEventListener('input', function(){ pedirRender(); });
   txtDesc.addEventListener('input', function(){ guardarMem(); pedirRender(); });
 
+  document.getElementById('chipsNovedad').addEventListener('click', function(ev){
+    var btn = ev.target.closest ? ev.target.closest('.chip') : null;
+    if(!btn) return;
+    var txt = btn.getAttribute('data-txt');
+    var actual = txtDesc.value.trim();
+    txtDesc.value = actual ? (actual + ' · ' + txt) : txt;
+    guardarMem(); pedirRender();
+  });
+
   function pedirRender(){
     clearTimeout(timerRender);
     timerRender = setTimeout(function(){ render(); guardarSesion(); prepararBlob(); }, 250);
@@ -907,7 +932,11 @@
 
       if(navigator.canShare && navigator.canShare({ files: files })){
         navigator.share({ files: files, text: texto })
-          .then(function(){ borrarSesion(); })
+          .then(function(){
+            borrarSesion();
+            mostrarAviso('✅ Enviado. Preparando la próxima foto…', true);
+            setTimeout(iniciarNuevaFoto, 700);
+          })
           .catch(function(err){
             if(err && err.name !== 'AbortError'){
               for(var j=0;j<files.length;j++) descargar(lista[j], files[j].name);
@@ -961,7 +990,7 @@
   }
 
   // =============== nueva foto ===============
-  btnNueva.addEventListener('click', function(){
+  function iniciarNuevaFoto(){
     txtDesc.value = '';
     inpMedidor.value = '';
     inpLectura.value = '';
@@ -973,7 +1002,8 @@
     borrarSesion();
     ocultarAviso();
     abrirCamara('foto');
-  });
+  }
+  btnNueva.addEventListener('click', iniciarNuevaFoto);
 
   // =============== avisos ===============
   function mostrarAviso(msg, ok){
