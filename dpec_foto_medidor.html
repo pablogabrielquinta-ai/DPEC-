@@ -44,7 +44,7 @@
   main{padding:14px 14px 0;max-width:520px;margin:0 auto;}
 
   /* ---- pantalla inicial ---- */
-  #inicio{text-align:center;}
+  #inicio{text-align:center;display:none;}
   .btn-grande{
     width:100%;
     border:none;border-radius:14px;
@@ -227,7 +227,7 @@
   <div class="logo">DP</div>
   <div>
     <h1>Foto Medidor</h1>
-    <div class="sub">Sello de remesa · ruta · novedad · v20</div>
+    <div class="sub">Sello de remesa · ruta · novedad · v21</div>
   </div>
 </header>
 
@@ -532,7 +532,7 @@
     });
   }
 
-  function sinCamaraEnVivo(msg){ mostrarAviso(msg); }
+  function sinCamaraEnVivo(msg){ mostrarPantalla('inicio'); mostrarAviso(msg); }
 
   function cerrarCamara(){
     clearInterval(scanTimer); scanTimer = null;
@@ -998,7 +998,6 @@
   // =============== arranque ===============
   poblarRutas(selRemesa.value, poblarRutasInicial);
   if(!recuperarSesion()){
-    mostrarPantalla('inicio');
     abrirCamara('foto');
   }
 
