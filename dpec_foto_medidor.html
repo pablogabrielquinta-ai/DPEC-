@@ -227,7 +227,7 @@
   <div class="logo">DP</div>
   <div>
     <h1>Foto Medidor</h1>
-    <div class="sub">Sello de remesa · ruta · novedad · v19</div>
+    <div class="sub">Sello de remesa · ruta · novedad · v20</div>
   </div>
 </header>
 
@@ -999,6 +999,7 @@
   poblarRutas(selRemesa.value, poblarRutasInicial);
   if(!recuperarSesion()){
     mostrarPantalla('inicio');
+    abrirCamara('foto');
   }
 
   // service worker (permite instalar como app y abrir sin señal)
