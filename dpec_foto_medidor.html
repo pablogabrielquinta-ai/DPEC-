@@ -227,7 +227,7 @@
   <div class="logo">DP</div>
   <div>
     <h1>Foto Medidor</h1>
-    <div class="sub">Sello de remesa · ruta · novedad · v21</div>
+    <div class="sub">Sello de remesa · ruta · novedad · v22</div>
   </div>
 </header>
 
@@ -566,6 +566,7 @@
     if(fotos.length === 1){
       fotoDataURL = off.toDataURL('image/jpeg', 0.8);
       fechaFoto = new Date();
+      inpMedidor.value = ''; // blindaje: primera foto de una novedad nueva, siempre arranca vacío
     }
     cerrarCamara();
     mostrarEdicion();
@@ -720,6 +721,7 @@
       if(fotos.length === 1){
         fotoDataURL = off.toDataURL('image/jpeg', 0.8);
         fechaFoto = new Date();
+        inpMedidor.value = ''; // blindaje: primera foto de una novedad nueva, siempre arranca vacío
       }
       inputFoto.value = '';
       mostrarEdicion();
