@@ -227,7 +227,7 @@
   <div class="logo">DP</div>
   <div>
     <h1>Foto Medidor</h1>
-    <div class="sub">Sello de remesa · ruta · novedad · v22</div>
+    <div class="sub">Sello de remesa · ruta · novedad · v24</div>
   </div>
 </header>
 
@@ -314,8 +314,25 @@
           <button type="button" class="chip" data-txt="Exceso de consumo">Exceso de consumo</button>
           <button type="button" class="chip" data-txt="45/5 primera vez">45/5 primera vez</button>
           <button type="button" class="chip" data-txt="Ver baja">Ver baja</button>
+          <button type="button" class="chip" data-txt="Lec. Menor">Lec. Menor</button>
+          <button type="button" class="chip" data-txt="Cambio de med.">Cambio de med.</button>
+          <button type="button" class="chip" data-txt="Medidor Dañado">Medidor Dañado</button>
         </div>
         <textarea id="descripcion" placeholder="Ej: Medidor con tapa rota, visor empañado, no se puede leer el estado."></textarea>
+      </div>
+
+      <div id="bloqueCambioMedidor" style="display:none;">
+        <div class="campo">
+          <label for="medidorNuevo">N° medidor nuevo (opcional)</label>
+          <div style="display:flex;gap:8px;">
+            <input type="text" id="medidorNuevo" inputmode="numeric" placeholder="Escanealo o escribilo" style="flex:1;">
+            <button type="button" id="btnEscanearNuevo" class="btn-escanear">|||&nbsp;Escanear</button>
+          </div>
+        </div>
+        <div class="campo">
+          <label for="lecturaNueva">Lectura inicial del medidor nuevo (opcional)</label>
+          <input type="text" id="lecturaNueva" inputmode="decimal" placeholder="Ej: 00000">
+        </div>
       </div>
 
       <label class="chk" for="usarGps">
@@ -353,6 +370,10 @@
   var inpRuta     = document.getElementById('ruta');
   var txtDesc     = document.getElementById('descripcion');
   var chkGps      = document.getElementById('usarGps');
+  var bloqueCambioMedidor = document.getElementById('bloqueCambioMedidor');
+  var inpMedidorNuevo = document.getElementById('medidorNuevo');
+  var inpLecturaNueva = document.getElementById('lecturaNueva');
+  var btnEscanearNuevo = document.getElementById('btnEscanearNuevo');
   var gpsEstado   = document.getElementById('gpsEstado');
   var acciones    = document.getElementById('acciones');
   var btnAbrirCam = document.getElementById('btnAbrirCam');
@@ -442,6 +463,8 @@
         remesa: selRemesa.value,
         ruta: inpRuta.value,
         medidor: inpMedidor.value,
+        medidorNuevo: inpMedidorNuevo.value,
+        lecturaNueva: inpLecturaNueva.value,
         lectura: inpLectura.value,
         desc: txtDesc.value,
         gps: gps,
@@ -472,6 +495,8 @@
       if(s.remesa) selRemesa.value = s.remesa;
       poblarRutas(selRemesa.value, s.ruta || null);
       if(s.medidor) inpMedidor.value = s.medidor;
+      if(s.medidorNuevo){ inpMedidorNuevo.value = s.medidorNuevo; bloqueCambioMedidor.style.display = 'block'; }
+      if(s.lecturaNueva){ inpLecturaNueva.value = s.lecturaNueva; bloqueCambioMedidor.style.display = 'block'; }
       if(s.lectura) inpLectura.value = s.lectura;
       if(s.desc)   txtDesc.value = s.desc;
       if(s.gps){ gps = s.gps; chkGps.checked = true;
@@ -566,7 +591,7 @@
     if(fotos.length === 1){
       fotoDataURL = off.toDataURL('image/jpeg', 0.8);
       fechaFoto = new Date();
-      inpMedidor.value = ''; // blindaje: primera foto de una novedad nueva, siempre arranca vacío
+      inpMedidor.value = ''; inpMedidorNuevo.value = ''; inpLecturaNueva.value = ''; bloqueCambioMedidor.style.display = 'none'; // blindaje: primera foto de una novedad nueva, siempre arranca vacío
     }
     cerrarCamara();
     mostrarEdicion();
@@ -721,7 +746,7 @@
       if(fotos.length === 1){
         fotoDataURL = off.toDataURL('image/jpeg', 0.8);
         fechaFoto = new Date();
-        inpMedidor.value = ''; // blindaje: primera foto de una novedad nueva, siempre arranca vacío
+        inpMedidor.value = ''; inpMedidorNuevo.value = ''; inpLecturaNueva.value = ''; bloqueCambioMedidor.style.display = 'none'; // blindaje: primera foto de una novedad nueva, siempre arranca vacío
       }
       inputFoto.value = '';
       mostrarEdicion();
@@ -769,8 +794,15 @@
     var txt = btn.getAttribute('data-txt');
     var actual = txtDesc.value.trim();
     txtDesc.value = actual ? (actual + ' · ' + txt) : txt;
+    if(txt === 'Cambio de med.'){
+      bloqueCambioMedidor.style.display = 'block';
+    }
     guardarMem(); pedirRender();
   });
+
+  btnEscanearNuevo.addEventListener('click', function(){ pedirEscaneo(inpMedidorNuevo); });
+  inpMedidorNuevo.addEventListener('input', function(){ pedirRender(); });
+  inpLecturaNueva.addEventListener('input', function(){ pedirRender(); });
 
   function pedirRender(){
     clearTimeout(timerRender);
@@ -818,9 +850,13 @@
     var desc   = txtDesc.value.trim();
     var medidor= inpMedidor.value.trim();
     var lectura= inpLectura.value.trim();
+    var medidorNuevo = inpMedidorNuevo.value.trim();
+    var lecturaNueva = inpLecturaNueva.value.trim();
     var linea2 = [];
     if(medidor) linea2.push('MEDIDOR ' + medidor);
     if(lectura) linea2.push('LECTURA ' + lectura);
+    if(medidorNuevo) linea2.push('MED.NUEVO ' + medidorNuevo);
+    if(lecturaNueva) linea2.push('LECT.INICIAL ' + lecturaNueva);
     linea2 = linea2.join('  \u00b7  ');
 
     var pad     = Math.round(w * 0.030);
@@ -957,6 +993,8 @@
     if(inpRuta.value.trim()) t.push('Ruta ' + inpRuta.value.trim());
     if(inpMedidor.value.trim()) t.push('Medidor ' + inpMedidor.value.trim());
     if(inpLectura.value.trim()) t.push('Lectura ' + inpLectura.value.trim());
+    if(inpMedidorNuevo.value.trim()) t.push('Medidor nuevo ' + inpMedidorNuevo.value.trim());
+    if(inpLecturaNueva.value.trim()) t.push('Lectura inicial ' + inpLecturaNueva.value.trim());
     var linea = t.join(' · ');
     var desc = txtDesc.value.trim();
     return desc ? (linea ? linea + '\n' + desc : desc) : linea;
@@ -979,6 +1017,9 @@
     txtDesc.value = '';
     inpMedidor.value = '';
     inpLectura.value = '';
+    inpMedidorNuevo.value = '';
+    inpLecturaNueva.value = '';
+    bloqueCambioMedidor.style.display = 'none';
     blobs = []; fotoDataURL = null;
     inputFoto.value = '';
     fotos = [];
