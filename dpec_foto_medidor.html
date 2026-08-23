@@ -227,7 +227,7 @@
   <div class="logo">DP</div>
   <div>
     <h1>Foto Medidor</h1>
-    <div class="sub">Sello de remesa · ruta · novedad · v24</div>
+    <div class="sub">Sello de remesa · ruta · novedad · v25</div>
   </div>
 </header>
 
@@ -323,14 +323,14 @@
 
       <div id="bloqueCambioMedidor" style="display:none;">
         <div class="campo">
-          <label for="medidorNuevo">N° medidor nuevo (opcional)</label>
+          <label for="medidorNuevo">N° medidor anterior (opcional)</label>
           <div style="display:flex;gap:8px;">
             <input type="text" id="medidorNuevo" inputmode="numeric" placeholder="Escanealo o escribilo" style="flex:1;">
             <button type="button" id="btnEscanearNuevo" class="btn-escanear">|||&nbsp;Escanear</button>
           </div>
         </div>
         <div class="campo">
-          <label for="lecturaNueva">Lectura inicial del medidor nuevo (opcional)</label>
+          <label for="lecturaNueva">Lectura final del medidor anterior (opcional)</label>
           <input type="text" id="lecturaNueva" inputmode="decimal" placeholder="Ej: 00000">
         </div>
       </div>
@@ -855,8 +855,8 @@
     var linea2 = [];
     if(medidor) linea2.push('MEDIDOR ' + medidor);
     if(lectura) linea2.push('LECTURA ' + lectura);
-    if(medidorNuevo) linea2.push('MED.NUEVO ' + medidorNuevo);
-    if(lecturaNueva) linea2.push('LECT.INICIAL ' + lecturaNueva);
+    if(medidorNuevo) linea2.push('MED.ANTERIOR ' + medidorNuevo);
+    if(lecturaNueva) linea2.push('LECT.FINAL ' + lecturaNueva);
     linea2 = linea2.join('  \u00b7  ');
 
     var pad     = Math.round(w * 0.030);
@@ -993,8 +993,8 @@
     if(inpRuta.value.trim()) t.push('Ruta ' + inpRuta.value.trim());
     if(inpMedidor.value.trim()) t.push('Medidor ' + inpMedidor.value.trim());
     if(inpLectura.value.trim()) t.push('Lectura ' + inpLectura.value.trim());
-    if(inpMedidorNuevo.value.trim()) t.push('Medidor nuevo ' + inpMedidorNuevo.value.trim());
-    if(inpLecturaNueva.value.trim()) t.push('Lectura inicial ' + inpLecturaNueva.value.trim());
+    if(inpMedidorNuevo.value.trim()) t.push('Medidor anterior ' + inpMedidorNuevo.value.trim());
+    if(inpLecturaNueva.value.trim()) t.push('Lectura final ' + inpLecturaNueva.value.trim());
     var linea = t.join(' · ');
     var desc = txtDesc.value.trim();
     return desc ? (linea ? linea + '\n' + desc : desc) : linea;
