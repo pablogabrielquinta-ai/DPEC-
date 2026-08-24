@@ -227,7 +227,7 @@
   <div class="logo">DP</div>
   <div>
     <h1>Foto Medidor</h1>
-    <div class="sub">Sello de remesa · ruta · novedad · v25</div>
+    <div class="sub">Sello de remesa · ruta · novedad · v26</div>
   </div>
 </header>
 
@@ -317,6 +317,7 @@
           <button type="button" class="chip" data-txt="Lec. Menor">Lec. Menor</button>
           <button type="button" class="chip" data-txt="Cambio de med.">Cambio de med.</button>
           <button type="button" class="chip" data-txt="Medidor Dañado">Medidor Dañado</button>
+          <button type="button" class="chip" data-txt="Quiebre de consumo">Quiebre de consumo</button>
         </div>
         <textarea id="descripcion" placeholder="Ej: Medidor con tapa rota, visor empañado, no se puede leer el estado."></textarea>
       </div>
@@ -561,6 +562,7 @@
 
   function cerrarCamara(){
     clearInterval(scanTimer); scanTimer = null;
+    clearTimeout(zoomThrottleTimer); zoomThrottleTimer = null; zoomPendiente = null;
     track = null; torchOn = false;
     btnLinterna.classList.remove('activa');
     btnLinterna.style.display = 'none';
@@ -623,11 +625,21 @@
     }
   }
 
+  var zoomThrottleTimer = null;
+  var zoomPendiente = null;
   function aplicarZoom(v){
     if(!track) return;
     v = Math.max(zoomMin, Math.min(zoomMax, v));
-    zoomSlider.value = v;
-    try{ track.applyConstraints({ advanced:[{ zoom: v }] }).catch(function(){}); }catch(e){}
+    zoomSlider.value = v; // respuesta visual instantánea, sin costo
+    zoomPendiente = v;
+    if(zoomThrottleTimer) return; // ya hay una orden programada, se aplica el último valor pedido
+    zoomThrottleTimer = setTimeout(function(){
+      zoomThrottleTimer = null;
+      if(zoomPendiente == null || !track) return;
+      var vv = zoomPendiente;
+      zoomPendiente = null;
+      try{ track.applyConstraints({ advanced:[{ zoom: vv }] }).catch(function(){}); }catch(e){}
+    }, 90);
   }
 
   zoomSlider.addEventListener('input', function(){
