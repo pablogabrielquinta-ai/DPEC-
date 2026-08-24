@@ -227,7 +227,7 @@
   <div class="logo">DP</div>
   <div>
     <h1>Foto Medidor</h1>
-    <div class="sub">Sello de remesa · ruta · novedad · v26</div>
+    <div class="sub">Sello de remesa · ruta · novedad · v27</div>
   </div>
 </header>
 
@@ -529,6 +529,9 @@
   function abrirCamara(modo){
     modoCamara = modo || 'foto';
     ocultarAviso();
+    // reiniciar el zoom a neutro: evita que un pellizco apurado mande una orden
+    // con el rango de la cámara anterior mientras la nueva todavía está negociando
+    zoomMin = 1; zoomMax = 1; zoomSlider.value = 1;
     if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
       sinCamaraEnVivo('Este navegador no permite la cámara en vivo.');
       return;
@@ -614,9 +617,13 @@
       btnLinterna.style.display = 'flex';
     }
     if(caps.zoom && caps.zoom.max > caps.zoom.min){
-      zoomMin = caps.zoom.min; zoomMax = caps.zoom.max;
+      zoomMin = caps.zoom.min;
+      // recortamos el tramo final del zoom: es donde el recorte digital de
+      // la cámara web se pone más pesado y se nota trabado en varios teléfonos
+      zoomMax = caps.zoom.min + (caps.zoom.max - caps.zoom.min) * 0.7;
       var z = zoomMin;
       try{ z = track.getSettings().zoom || zoomMin; }catch(e){}
+      z = Math.min(z, zoomMax);
       zoomSlider.min = zoomMin;
       zoomSlider.max = zoomMax;
       zoomSlider.step = caps.zoom.step || 0.1;
