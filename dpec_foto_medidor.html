@@ -227,7 +227,7 @@
   <div class="logo">DP</div>
   <div>
     <h1>Foto Medidor</h1>
-    <div class="sub">Sello de remesa · ruta · novedad · v27</div>
+    <div class="sub">Sello de remesa · ruta · novedad · v28</div>
   </div>
 </header>
 
@@ -335,12 +335,6 @@
           <input type="text" id="lecturaNueva" inputmode="decimal" placeholder="Ej: 00000">
         </div>
       </div>
-
-      <label class="chk" for="usarGps">
-        <input type="checkbox" id="usarGps">
-        Incluir ubicación GPS
-        <span class="gps-estado" id="gpsEstado"></span>
-      </label>
     </form>
   </div>
 
@@ -370,12 +364,10 @@
   var selRemesa   = document.getElementById('remesa');
   var inpRuta     = document.getElementById('ruta');
   var txtDesc     = document.getElementById('descripcion');
-  var chkGps      = document.getElementById('usarGps');
   var bloqueCambioMedidor = document.getElementById('bloqueCambioMedidor');
   var inpMedidorNuevo = document.getElementById('medidorNuevo');
   var inpLecturaNueva = document.getElementById('lecturaNueva');
   var btnEscanearNuevo = document.getElementById('btnEscanearNuevo');
-  var gpsEstado   = document.getElementById('gpsEstado');
   var acciones    = document.getElementById('acciones');
   var btnAbrirCam = document.getElementById('btnAbrirCam');
   var btnGaleria  = document.getElementById('btnGaleria');
@@ -500,10 +492,7 @@
       if(s.lecturaNueva){ inpLecturaNueva.value = s.lecturaNueva; bloqueCambioMedidor.style.display = 'block'; }
       if(s.lectura) inpLectura.value = s.lectura;
       if(s.desc)   txtDesc.value = s.desc;
-      if(s.gps){ gps = s.gps; chkGps.checked = true;
-        gpsEstado.textContent = gps.lat.toFixed(5) + ', ' + gps.lon.toFixed(5);
-        gpsEstado.classList.add('ok');
-      }
+      if(s.gps){ gps = s.gps; }
       mostrarEdicion();
       render();
       prepararBlob();
@@ -600,7 +589,7 @@
     }
     cerrarCamara();
     mostrarEdicion();
-    if(chkGps.checked) pedirGps();
+    pedirGps();
     render();
     guardarSesion();
     prepararBlob();
@@ -769,7 +758,7 @@
       }
       inputFoto.value = '';
       mostrarEdicion();
-      if(chkGps.checked) pedirGps();
+      pedirGps();
       render();
       guardarSesion();
       prepararBlob();
@@ -778,25 +767,15 @@
     img.src = url;
   });
 
-  // =============== GPS ===============
-  chkGps.addEventListener('change', function(){
-    if(chkGps.checked){ pedirGps(); }
-    else { gps = null; gpsEstado.textContent = ''; gpsEstado.classList.remove('ok'); pedirRender(); }
-  });
-
+  // =============== GPS (automático, en segundo plano) ===============
   function pedirGps(){
-    if(!navigator.geolocation){ gpsEstado.textContent = 'Sin GPS'; return; }
-    gpsEstado.textContent = 'Buscando…';
-    gpsEstado.classList.remove('ok');
+    if(!navigator.geolocation) return;
     navigator.geolocation.getCurrentPosition(function(pos){
       gps = { lat: pos.coords.latitude, lon: pos.coords.longitude };
-      gpsEstado.textContent = gps.lat.toFixed(5) + ', ' + gps.lon.toFixed(5);
-      gpsEstado.classList.add('ok');
       pedirRender();
       guardarSesion();
     }, function(){
       gps = null;
-      gpsEstado.textContent = 'Sin señal';
       pedirRender();
     }, { enableHighAccuracy:true, timeout:10000, maximumAge:60000 });
   }
