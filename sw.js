@@ -2,7 +2,7 @@
    Estrategia: caché primero (abre al toque), actualiza en segundo
    plano. La próxima vez que se abra ya está la versión nueva. */
 
-var CACHE = 'dpec-foto-medidor-v28';
+var CACHE = 'dpec-foto-medidor-v29';
 var ARCHIVOS = [
   './dpec_foto_medidor.html',
   './manifest.json',
