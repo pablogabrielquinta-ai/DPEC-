@@ -43,8 +43,22 @@
 
   main{padding:14px 14px 0;max-width:520px;margin:0 auto;}
 
-  /* ---- pantalla inicial ---- */
+  /* ---- pantalla inicial (fallback) ---- */
   #inicio{text-align:center;display:none;}
+  .inicio-card{
+    background:linear-gradient(180deg, var(--panel) 0%, var(--panel2) 100%);
+    border:1px solid var(--line);border-radius:18px;
+    padding:28px 20px 22px;margin-top:6px;
+  }
+  .inicio-ico{
+    width:60px;height:60px;border-radius:50%;
+    background:var(--accent);color:var(--accent-dark);
+    display:flex;align-items:center;justify-content:center;
+    font-size:28px;margin:0 auto 14px;
+    box-shadow:0 0 0 8px rgba(255,197,61,0.12);
+  }
+  .inicio-titulo{font-size:18px;font-weight:800;margin-bottom:8px;}
+  .inicio-texto{font-size:13px;color:var(--muted);line-height:1.5;margin-bottom:18px;}
   .btn-grande{
     width:100%;
     border:none;border-radius:14px;
@@ -60,7 +74,7 @@
     font-size:14px;font-weight:600;font-family:inherit;
     padding:14px;cursor:pointer;
   }
-  #inicio .nota{margin-top:14px;font-size:12px;color:var(--muted);line-height:1.5;}
+  #inicio .nota{margin-top:14px;font-size:12px;color:var(--muted);line-height:1.5;text-align:left;}
 
   /* ---- cámara en vivo ---- */
   #camara{display:none;}
@@ -172,6 +186,7 @@
     padding:8px 14px;cursor:pointer;white-space:nowrap;
   }
   .chip:active{background:var(--accent);color:var(--accent-dark);border-color:var(--accent);}
+  .chip-ico{margin-right:5px;}
   .chk{
     display:flex;align-items:center;gap:10px;
     background:var(--panel);border:1px solid var(--line);
@@ -227,18 +242,24 @@
   <div class="logo">DP</div>
   <div>
     <h1>Foto Medidor</h1>
-    <div class="sub">Sello de remesa · ruta · novedad · v29</div>
+    <div class="sub">Sello de remesa · ruta · novedad · v31</div>
   </div>
 </header>
 
 <main>
-  <!-- pantalla inicial -->
+  <!-- pantalla inicial (solo si falla la cámara, o primer uso) -->
   <div id="inicio">
-    <button class="btn-grande" id="btnAbrirCam" type="button">📷 &nbsp;Abrir cámara</button>
-    <button class="btn-galeria" id="btnGaleria" type="button">🖼️ &nbsp;Elegir foto de la galería</button>
-    <p class="nota">La cámara funciona adentro de la app, sin cambiar de aplicación,
-    así el teléfono no cierra nada. Si el navegador no da permiso, usá la opción de galería:
-    sacá la foto con la cámara del teléfono primero y después elegila acá.</p>
+    <div class="inicio-card">
+      <div class="inicio-ico">⚡</div>
+      <h2 class="inicio-titulo">La cámara no se abrió</h2>
+      <p class="inicio-texto">Abajo te dice el motivo. Mientras tanto podés
+      elegir una foto de la galería.</p>
+      <button class="btn-grande" id="btnAbrirCam" type="button">📷 &nbsp;Abrir cámara</button>
+      <button class="btn-galeria" id="btnGaleria" type="button">🖼️ &nbsp;Elegir foto de la galería</button>
+      <p class="nota">La cámara funciona adentro de la app, sin cambiar de aplicación,
+      así el teléfono no cierra nada. Si el navegador no da permiso, usá la opción de galería:
+      sacá la foto con la cámara del teléfono primero y después elegila acá.</p>
+    </div>
   </div>
   <input type="file" id="inputFoto" accept="image/*">
 
@@ -308,17 +329,17 @@
       <div class="campo">
         <label for="descripcion">¿Qué pasa con el medidor?</label>
         <div class="chips" id="chipsNovedad">
-          <button type="button" class="chip" data-txt="No imp">No imp</button>
-          <button type="button" class="chip" data-txt="Alta">Alta</button>
-          <button type="button" class="chip" data-txt="Apagado">Apagado</button>
-          <button type="button" class="chip" data-txt="Exceso de consumo">Exceso de consumo</button>
-          <button type="button" class="chip" data-txt="45/5 primera vez">45/5 primera vez</button>
-          <button type="button" class="chip" data-txt="Ver baja">Ver baja</button>
-          <button type="button" class="chip" data-txt="Lec. Menor">Lec. Menor</button>
-          <button type="button" class="chip" data-txt="Cambio de med.">Cambio de med.</button>
-          <button type="button" class="chip" data-txt="Medidor Dañado">Medidor Dañado</button>
-          <button type="button" class="chip" data-txt="Quiebre de consumo">Quiebre de consumo</button>
-          <button type="button" class="chip" data-txt="Error de lectura">Error de lectura</button>
+          <button type="button" class="chip" data-txt="No imp"><span class="chip-ico">✅</span>No imp</button>
+          <button type="button" class="chip" data-txt="Alta"><span class="chip-ico">🆕</span>Alta</button>
+          <button type="button" class="chip" data-txt="Apagado"><span class="chip-ico">🔌</span>Apagado</button>
+          <button type="button" class="chip" data-txt="Exceso de consumo"><span class="chip-ico">📈</span>Exceso de consumo</button>
+          <button type="button" class="chip" data-txt="45/5 primera vez"><span class="chip-ico">🔁</span>45/5 primera vez</button>
+          <button type="button" class="chip" data-txt="Ver baja"><span class="chip-ico">📉</span>Ver baja</button>
+          <button type="button" class="chip" data-txt="Lec. Menor"><span class="chip-ico">🔽</span>Lec. Menor</button>
+          <button type="button" class="chip" data-txt="Cambio de med."><span class="chip-ico">🔄</span>Cambio de med.</button>
+          <button type="button" class="chip" data-txt="Medidor Dañado"><span class="chip-ico">⚠️</span>Medidor Dañado</button>
+          <button type="button" class="chip" data-txt="Quiebre de consumo"><span class="chip-ico">✂️</span>Quiebre de consumo</button>
+          <button type="button" class="chip" data-txt="Error de lectura"><span class="chip-ico">❗</span>Error de lectura</button>
         </div>
         <textarea id="descripcion" placeholder="Ej: Medidor con tapa rota, visor empañado, no se puede leer el estado."></textarea>
       </div>
@@ -972,8 +993,8 @@
         navigator.share({ files: files, text: texto })
           .then(function(){
             borrarSesion();
-            mostrarAviso('✅ Enviado. Preparando la próxima foto…', true);
-            setTimeout(iniciarNuevaFoto, 700);
+            mostrarAviso('✅ Enviado. ¡Gracias por tu trabajo! Preparando la próxima foto…', true);
+            setTimeout(iniciarNuevaFoto, 900);
           })
           .catch(function(err){
             if(err && err.name !== 'AbortError'){
