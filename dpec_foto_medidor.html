@@ -234,6 +234,37 @@
   .aviso.ok{border-color:var(--green);color:var(--green);}
 
   #inputFoto{display:none;}
+
+  /* ---- informe de ruta ---- */
+  .btn-informe{
+    margin-left:auto;flex-shrink:0;
+    background:var(--panel2);border:1px solid var(--line);color:var(--text);
+    border-radius:10px;padding:8px 11px;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;
+  }
+  .btn-informe.pendiente{background:var(--accent);color:var(--accent-dark);border-color:var(--accent);}
+  .btn-informe.urgente{background:var(--red);color:#2A0505;border-color:var(--red);}
+  .informe-fondo{
+    position:fixed;inset:0;z-index:50;background:rgba(0,0,0,0.65);
+    display:none;align-items:flex-end;justify-content:center;
+  }
+  .informe-fondo.visible{display:flex;}
+  .informe-panel{
+    background:var(--bg);border:1px solid var(--line);border-radius:18px 18px 0 0;
+    width:100%;max-width:520px;max-height:88vh;display:flex;flex-direction:column;
+    padding:16px 16px calc(16px + env(safe-area-inset-bottom));
+  }
+  .informe-panel h2{font-size:17px;font-weight:800;margin-bottom:4px;}
+  .informe-panel .sub2{font-size:12px;color:var(--muted);margin-bottom:10px;}
+  .informe-pre{
+    flex:1;overflow:auto;white-space:pre-wrap;word-break:break-word;
+    background:var(--panel);border:1px solid var(--line);border-radius:10px;
+    padding:10px 12px;font-size:12.5px;line-height:1.45;margin-bottom:12px;min-height:80px;
+  }
+  .informe-botones{display:flex;gap:8px;}
+  .informe-botones button{flex:1;border:none;border-radius:12px;font-size:15px;font-weight:700;padding:15px 10px;font-family:inherit;cursor:pointer;}
+  .informe-botones .btn-sec{border:1px solid var(--line);}
+  .informe-link{background:none;border:none;color:var(--muted);font-size:12px;
+    font-family:inherit;text-decoration:underline;margin-top:10px;cursor:pointer;}
 </style>
 </head>
 <body>
@@ -242,9 +273,23 @@
   <div class="logo">DP</div>
   <div>
     <h1>MedidorClic</h1>
-    <div class="sub">Sello de remesa · ruta · novedad · v34</div>
+    <div class="sub">Sello de remesa · ruta · novedad · v35</div>
   </div>
+  <button type="button" class="btn-informe" id="btnInforme">📋 Informe</button>
 </header>
+
+<div class="informe-fondo" id="informeFondo">
+  <div class="informe-panel">
+    <h2>Informe de ruta</h2>
+    <div class="sub2" id="informeSub"></div>
+    <div class="informe-pre" id="informeTexto"></div>
+    <div class="informe-botones">
+      <button type="button" class="btn-sec" id="btnInformeCerrar">Volver</button>
+      <button type="button" class="btn-compartir" id="btnInformeEnviar">Enviar ➤ WhatsApp</button>
+    </div>
+    <button type="button" class="informe-link" id="btnInformeUltimo">Reenviar el último informe</button>
+  </div>
+</div>
 
 <main>
   <!-- pantalla inicial (solo si falla la cámara, o primer uso) -->
@@ -2311,6 +2356,7 @@ return {QRCode:R("index"),ECL:R("QRErrorCorrectLevel")};})();
       if(navigator.canShare && navigator.canShare({ files: files })){
         navigator.share({ files: files, text: texto })
           .then(function(){
+            registrarEnvio();
             borrarSesion();
             mostrarAviso('✅ Enviado. ¡Gracias por tu trabajo! Preparando la próxima foto…', true);
             setTimeout(iniciarNuevaFoto, 900);
@@ -2396,6 +2442,157 @@ return {QRCode:R("index"),ECL:R("QRErrorCorrectLevel")};})();
     aviso.classList.toggle('ok', !!ok);
   }
   function ocultarAviso(){ aviso.classList.remove('visible','ok'); }
+
+
+  // =============== informe de ruta ===============
+  // Cada foto compartida queda anotada en el celu; "📋 Informe" arma el
+  // resumen para el grupo. Aviso amarillo desde 12:15, rojo desde 12:45.
+  var CLAVE_REG = 'mc_registro_envios_v1';
+  var CLAVE_ULT = 'mc_ultimo_informe_v1';
+  var CHIPS_INF = ['No imp','Alta','Apagado','Exceso de consumo','45/5 primera vez','Ver baja','Lec. Menor',
+                   'Cambio de med.','Medidor Dañado','Quiebre de consumo','Error de lectura'];
+  var btnInforme   = document.getElementById('btnInforme');
+  var informeFondo = document.getElementById('informeFondo');
+  var informeSub   = document.getElementById('informeSub');
+  var informeTexto = document.getElementById('informeTexto');
+  var btnInformeEnviar = document.getElementById('btnInformeEnviar');
+  var btnInformeCerrar = document.getElementById('btnInformeCerrar');
+  var btnInformeUltimo = document.getElementById('btnInformeUltimo');
+  var textoInforme = '', esReenvio = false;
+
+  function leerReg(){
+    try{ var r = JSON.parse(localStorage.getItem(CLAVE_REG) || '[]'); return Array.isArray(r) ? r : []; }
+    catch(e){ return []; }
+  }
+  function guardarReg(r){ try{ localStorage.setItem(CLAVE_REG, JSON.stringify(r)); }catch(e){} }
+
+  function registrarEnvio(){
+    var r = leerReg();
+    r.push({
+      t: Date.now(),
+      remesa: selRemesa.value, ruta: inpRuta.value.trim(),
+      med: inpMedidor.value.trim(), lect: inpLectura.value.trim(),
+      nov: txtDesc.value.trim(),
+      medAnt: inpMedidorNuevo.value.trim(), lectFin: inpLecturaNueva.value.trim(),
+      estado: inpEstadoLectura.value.trim()
+    });
+    guardarReg(r);
+    pintarBotonInforme();
+  }
+
+  function dosDig(n){ return (n<10?'0':'') + n; }
+  function pintarBotonInforme(){
+    var n = leerReg().length;
+    var d = new Date(), min = d.getHours()*60 + d.getMinutes();
+    var urgente = n > 0 && min >= 12*60+45;
+    var pendiente = n > 0 && !urgente && min >= 12*60+15;
+    btnInforme.textContent = urgente ? ('📋 ¡Mandar informe! (' + n + ')') : ('📋 Informe' + (n ? ' (' + n + ')' : ''));
+    btnInforme.classList.toggle('urgente', urgente);
+    btnInforme.classList.toggle('pendiente', pendiente);
+  }
+
+  function armarInforme(reg){
+    var ahora = new Date();
+    var hoyTxt = dosDig(ahora.getDate()) + '/' + dosDig(ahora.getMonth()+1) + '/' + ahora.getFullYear();
+    var grupos = {}, orden = [];
+    reg.forEach(function(e){
+      var k = (e.remesa || '-') + '|' + (e.ruta || '-');
+      if(!grupos[k]){ grupos[k] = []; orden.push(k); }
+      grupos[k].push(e);
+    });
+    var t = [];
+    t.push('📋 *INFORME DE RUTA* · MedidorClic');
+    t.push('📅 ' + hoyTxt + ' · ' + dosDig(ahora.getHours()) + ':' + dosDig(ahora.getMinutes()) + ' hs');
+    orden.forEach(function(k){
+      var lista = grupos[k], rr = k.split('|'), cuenta = {}, otras = 0;
+      lista.forEach(function(e){
+        var alguna = false;
+        CHIPS_INF.forEach(function(c){ if((e.nov||'').indexOf(c) >= 0){ cuenta[c] = (cuenta[c]||0) + 1; alguna = true; } });
+        if(!alguna) otras++;
+      });
+      var res = CHIPS_INF.filter(function(c){ return cuenta[c]; })
+                         .sort(function(a,b){ return cuenta[b] - cuenta[a]; })
+                         .map(function(c){ return c + ' ×' + cuenta[c]; });
+      if(otras) res.push('Otras ×' + otras);
+      t.push('');
+      t.push('*REMESA ' + rr[0] + ' · RUTA ' + rr[1] + '* · ' + lista.length + (lista.length === 1 ? ' novedad' : ' novedades'));
+      t.push('Resumen: ' + res.join(' · '));
+      lista.forEach(function(e, i){
+        var d = new Date(e.t);
+        var mismoDia = d.toDateString() === ahora.toDateString();
+        var l = (i+1) + '. ' + (mismoDia ? '' : dosDig(d.getDate()) + '/' + dosDig(d.getMonth()+1) + ' ') +
+                dosDig(d.getHours()) + ':' + dosDig(d.getMinutes());
+        l += ' · Med ' + (e.med || 's/n');
+        if(e.lect) l += ' · Lect ' + e.lect;
+        l += ' · ' + (e.nov || 'sin novedad escrita');
+        if(e.medAnt || e.lectFin) l += ' (med. anterior ' + (e.medAnt || 's/n') + (e.lectFin ? ', lect. final ' + e.lectFin : '') + ')';
+        if(e.estado) l += ' (estado: ' + e.estado + ')';
+        t.push(l);
+      });
+    });
+    t.push('');
+    t.push('Total: ' + reg.length + (reg.length === 1 ? ' novedad' : ' novedades') + ' en ' + orden.length + (orden.length === 1 ? ' ruta' : ' rutas'));
+    return { texto: t.join('\n'), rutas: orden.length };
+  }
+
+  function abrirInforme(texto, sub, reenvio){
+    textoInforme = texto; esReenvio = reenvio;
+    informeSub.textContent = sub;
+    informeTexto.textContent = texto;
+    var ult = null; try{ ult = localStorage.getItem(CLAVE_ULT); }catch(e){}
+    btnInformeUltimo.style.display = (!reenvio && ult) ? '' : 'none';
+    informeFondo.classList.add('visible');
+  }
+  function cerrarInforme(){ informeFondo.classList.remove('visible'); }
+
+  btnInforme.addEventListener('click', function(){
+    var reg = leerReg();
+    if(!reg.length){
+      var ult = null; try{ ult = localStorage.getItem(CLAVE_ULT); }catch(e){}
+      if(ult){ abrirInforme(ult, 'No hay envíos nuevos. Este es el último informe que mandaste.', true); }
+      else { mostrarAviso('Todavía no hay envíos para informar. Cada foto que compartas queda anotada para el informe.'); }
+      return;
+    }
+    var inf = armarInforme(reg);
+    abrirInforme(inf.texto, reg.length + ' envíos · ' + inf.rutas + (inf.rutas === 1 ? ' ruta' : ' rutas') + ' · así llega al grupo', false);
+  });
+  btnInformeCerrar.addEventListener('click', cerrarInforme);
+  informeFondo.addEventListener('click', function(ev){ if(ev.target === informeFondo) cerrarInforme(); });
+  btnInformeUltimo.addEventListener('click', function(){
+    var ult = null; try{ ult = localStorage.getItem(CLAVE_ULT); }catch(e){}
+    if(ult) abrirInforme(ult, 'Último informe enviado', true);
+  });
+
+  function informeEnviado(){
+    if(!esReenvio){
+      try{ localStorage.setItem(CLAVE_ULT, textoInforme); }catch(e){}
+      guardarReg([]);
+    }
+    cerrarInforme();
+    pintarBotonInforme();
+    mostrarAviso('✅ Informe enviado. ¡Gracias por tu trabajo! La lista quedó limpia para la próxima ruta.', true);
+  }
+
+  btnInformeEnviar.addEventListener('click', function(){
+    if(navigator.share){
+      navigator.share({ text: textoInforme }).then(informeEnviado).catch(function(err){
+        if(err && err.name === 'AbortError') return;
+        abrirWhatsAppTexto();
+      });
+    } else {
+      abrirWhatsAppTexto();
+    }
+  });
+  function abrirWhatsAppTexto(){
+    // sin "compartir": se abre WhatsApp con el texto escrito; la lista se limpia igual
+    var url = 'https://wa.me/?text=' + encodeURIComponent(textoInforme);
+    informeEnviado();
+    location.href = url;
+  }
+
+  pintarBotonInforme();
+  setInterval(pintarBotonInforme, 60000);
+  document.addEventListener('visibilitychange', function(){ if(!document.hidden) pintarBotonInforme(); });
 
   // =============== arranque ===============
   poblarRutas(selRemesa.value, poblarRutasInicial);
