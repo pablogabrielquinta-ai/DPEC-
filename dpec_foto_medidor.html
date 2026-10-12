@@ -275,7 +275,7 @@
   <div class="logo">DP</div>
   <div>
     <h1>MedidorClic</h1>
-    <div class="sub">Sello de remesa · ruta · novedad · v38</div>
+    <div class="sub">Sello de remesa · ruta · novedad · v39</div>
   </div>
   <button type="button" class="btn-informe" id="btnInforme">📋 Informe</button>
 </header>
@@ -387,6 +387,7 @@
           <button type="button" class="chip" data-txt="Medidor Dañado"><span class="chip-ico">⚠️</span>Medidor Dañado</button>
           <button type="button" class="chip" data-txt="Quiebre de consumo"><span class="chip-ico">✂️</span>Quiebre de consumo</button>
           <button type="button" class="chip" data-txt="Error de lectura"><span class="chip-ico">❗</span>Error de lectura</button>
+          <button type="button" class="chip" data-txt="Ord.13 Obras"><span class="chip-ico">🚧</span>Ord.13 Obras</button>
         </div>
         <textarea id="descripcion" placeholder="Ej: Medidor con tapa rota, visor empañado, no se puede leer el estado."></textarea>
       </div>
@@ -2471,7 +2472,7 @@ return {QRCode:R("index"),ECL:R("QRErrorCorrectLevel")};})();
   var CLAVE_REG = 'mc_registro_envios_v1';
   var CLAVE_ULT = 'mc_ultimo_informe_v1';
   var CHIPS_INF = ['No imp','Alta','Apagado','Exceso de consumo','45/5 primera vez','Ver baja','Lec. Menor',
-                   'Cambio de med.','Medidor Dañado','Quiebre de consumo','Error de lectura'];
+                   'Cambio de med.','Medidor Dañado','Quiebre de consumo','Error de lectura','Ord.13 Obras'];
   var btnInforme   = document.getElementById('btnInforme');
   var informeFondo = document.getElementById('informeFondo');
   var informeSub   = document.getElementById('informeSub');
