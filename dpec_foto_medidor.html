@@ -7,6 +7,10 @@
 <link rel="manifest" href="manifest.json">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="MedidorClic">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
 <title>MedidorClic · DPEC</title>
 <style>
   :root{
@@ -279,7 +283,7 @@
   <div class="logo">DP</div>
   <div>
     <h1>MedidorClic</h1>
-    <div class="sub">Sello de remesa · ruta · novedad · v44</div>
+    <div class="sub">Sello de remesa · ruta · novedad · v45</div>
   </div>
   <button type="button" class="btn-informe" id="btnInforme">📋 Informe</button>
 </header>
@@ -2177,6 +2181,7 @@ return {QRCode:R("index"),ECL:R("QRErrorCorrectLevel")};})();
   inpEstadoLectura.addEventListener('input', function(){ pedirRender(); });
 
   function pedirRender(){
+    blobs = [];   // lo preparado ya no vale: si comparten ya mismo, se arma de nuevo con los datos actuales
     clearTimeout(timerRender);
     timerRender = setTimeout(function(){ render(); guardarSesion(); prepararBlob(); }, 250);
   }
@@ -2218,7 +2223,7 @@ return {QRCode:R("index"),ECL:R("QRErrorCorrectLevel")};})();
   }
   // =============== QR chiquito con los datos ===============
   function sinAcentos(t){
-    return t.normalize ? t.normalize('NFD').replace(/[̀-ͯ]/g,'') : t;
+    return t.normalize ? t.normalize('NFD').replace(/[\u0300-\u036f]/g,'') : t;
   }
   function textoQR(){
     var l = [];
