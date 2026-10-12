@@ -185,8 +185,12 @@
     font-size:13px;font-weight:700;font-family:inherit;
     padding:8px 14px;cursor:pointer;white-space:nowrap;
   }
-  .chip:active{background:var(--accent);color:var(--accent-dark);border-color:var(--accent);}
-  .chip-ico{margin-right:5px;}
+  .chip:active{filter:brightness(1.1);}
+  .chip.activo{background:var(--accent);color:var(--accent-dark);border-color:var(--accent);}
+  .chip{display:inline-flex;align-items:center;}
+  .chip-ico{margin-right:6px;display:inline-flex;}
+  .chip-ico svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;}
+
   .chk{
     display:flex;align-items:center;gap:10px;
     background:var(--panel);border:1px solid var(--line);
@@ -275,7 +279,7 @@
   <div class="logo">DP</div>
   <div>
     <h1>MedidorClic</h1>
-    <div class="sub">Sello de remesa · ruta · novedad · v39</div>
+    <div class="sub">Sello de remesa · ruta · novedad · v44</div>
   </div>
   <button type="button" class="btn-informe" id="btnInforme">📋 Informe</button>
 </header>
@@ -376,18 +380,18 @@
       <div class="campo">
         <label for="descripcion">¿Qué pasa con el medidor?</label>
         <div class="chips" id="chipsNovedad">
-          <button type="button" class="chip" data-txt="No imp"><span class="chip-ico">✅</span>No imp</button>
-          <button type="button" class="chip" data-txt="Alta"><span class="chip-ico">🆕</span>Alta</button>
-          <button type="button" class="chip" data-txt="Apagado"><span class="chip-ico">🔌</span>Apagado</button>
-          <button type="button" class="chip" data-txt="Exceso de consumo"><span class="chip-ico">📈</span>Exceso de consumo</button>
-          <button type="button" class="chip" data-txt="45/5 primera vez"><span class="chip-ico">🔁</span>45/5 primera vez</button>
-          <button type="button" class="chip" data-txt="Ver baja"><span class="chip-ico">📉</span>Ver baja</button>
-          <button type="button" class="chip" data-txt="Lec. Menor"><span class="chip-ico">🔽</span>Lec. Menor</button>
-          <button type="button" class="chip" data-txt="Cambio de med."><span class="chip-ico">🔄</span>Cambio de med.</button>
-          <button type="button" class="chip" data-txt="Medidor Dañado"><span class="chip-ico">⚠️</span>Medidor Dañado</button>
-          <button type="button" class="chip" data-txt="Quiebre de consumo"><span class="chip-ico">✂️</span>Quiebre de consumo</button>
-          <button type="button" class="chip" data-txt="Error de lectura"><span class="chip-ico">❗</span>Error de lectura</button>
-          <button type="button" class="chip" data-txt="Ord.13 Obras"><span class="chip-ico">🚧</span>Ord.13 Obras</button>
+          <button type="button" class="chip" data-txt="No imp"><span class="chip-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.7 2.7L16 9.8"/></svg></span>No imp</button>
+          <button type="button" class="chip" data-txt="Alta"><span class="chip-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg></span>Alta</button>
+          <button type="button" class="chip" data-txt="Apagado"><span class="chip-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v8"/><path d="M6.6 6.6a8 8 0 1 0 10.8 0"/></svg></span>Apagado</button>
+          <button type="button" class="chip" data-txt="Exceso de consumo"><span class="chip-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg></span>Exceso de consumo</button>
+          <button type="button" class="chip" data-txt="45/5 primera vez"><span class="chip-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 21V4"/><path d="M5 4h11l-2 4 2 4H5"/></svg></span>45/5 primera vez</button>
+          <button type="button" class="chip" data-txt="Ver baja"><span class="chip-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></span>Ver baja</button>
+          <button type="button" class="chip" data-txt="Lec. Menor"><span class="chip-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v15"/><path d="M6 13l6 6 6-6"/></svg></span>Lec. Menor</button>
+          <button type="button" class="chip" data-txt="Cambio de med."><span class="chip-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h13l-3-3"/><path d="M20 15H7l3 3"/></svg></span>Cambio de med.</button>
+          <button type="button" class="chip" data-txt="Medidor Dañado"><span class="chip-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3L2 20h20L12 3z"/><path d="M12 10v4"/><path d="M12 17.2v.1"/></svg></span>Medidor Dañado</button>
+          <button type="button" class="chip" data-txt="Quiebre de consumo"><span class="chip-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h5l2-5 3 10 2-5h6"/></svg></span>Quiebre de consumo</button>
+          <button type="button" class="chip" data-txt="Error de lectura"><span class="chip-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9 9l6 6M15 9l-6 6"/></svg></span>Error de lectura</button>
+          <button type="button" class="chip" data-txt="Ord.13 Obras"><span class="chip-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.5 4h5l5 16h-15z"/><path d="M7.6 10h8.8M6.4 14.5h11.2"/><path d="M3 20h18"/></svg></span>Ord.13 Obras</button>
         </div>
         <textarea id="descripcion" placeholder="Ej: Medidor con tapa rota, visor empañado, no se puede leer el estado."></textarea>
       </div>
@@ -1834,6 +1838,7 @@ return {QRCode:R("index"),ECL:R("QRErrorCorrectLevel")};})();
       if(s.lecturaNueva){ inpLecturaNueva.value = s.lecturaNueva; bloqueCambioMedidor.style.display = 'block'; }
       if(s.lectura) inpLectura.value = s.lectura;
       if(s.desc)   txtDesc.value = s.desc;
+      marcarChips();
       if(s.gps){ gps = s.gps; }
       mostrarEdicion();
       render();
@@ -2122,24 +2127,47 @@ return {QRCode:R("index"),ECL:R("QRErrorCorrectLevel")};})();
     }, { enableHighAccuracy:true, timeout:10000, maximumAge:60000 });
   }
 
+
+
   // =============== sello ===============
   inpRuta.addEventListener('change', function(){ guardarMem(); pedirRender(); });
   inpMedidor.addEventListener('input', function(){ pedirRender(); });
   inpLectura.addEventListener('input', function(){ pedirRender(); });
-  txtDesc.addEventListener('input', function(){ guardarMem(); pedirRender(); });
+  txtDesc.addEventListener('input', function(){ marcarChips(); guardarMem(); pedirRender(); });
 
-  document.getElementById('chipsNovedad').addEventListener('click', function(ev){
+  // ---- chips: un toque agrega la novedad, otro toque la saca ----
+  var chipsNovedad = document.getElementById('chipsNovedad');
+  function partesNovedad(){
+    return txtDesc.value.split('·').map(function(t){ return t.trim(); }).filter(function(t){ return t; });
+  }
+  function marcarChips(){
+    var partes = partesNovedad();
+    Array.prototype.forEach.call(chipsNovedad.querySelectorAll('.chip'), function(b){
+      b.classList.toggle('activo', partes.indexOf(b.getAttribute('data-txt')) >= 0);
+    });
+  }
+  chipsNovedad.addEventListener('click', function(ev){
     var btn = ev.target.closest ? ev.target.closest('.chip') : null;
     if(!btn) return;
     var txt = btn.getAttribute('data-txt');
-    var actual = txtDesc.value.trim();
-    txtDesc.value = actual ? (actual + ' · ' + txt) : txt;
-    if(txt === 'Cambio de med.'){
-      bloqueCambioMedidor.style.display = 'block';
+    var partes = partesNovedad();
+    var i = partes.indexOf(txt);
+    if(i >= 0){
+      partes.splice(i, 1);
+      // si se saca el chip y sus campos extra están vacíos, se esconden
+      if(txt === 'Cambio de med.' && !inpMedidorNuevo.value.trim() && !inpLecturaNueva.value.trim()){
+        bloqueCambioMedidor.style.display = 'none';
+      }
+      if(txt === 'Error de lectura' && !inpEstadoLectura.value.trim()){
+        bloqueErrorLectura.style.display = 'none';
+      }
+    } else {
+      partes.push(txt);
+      if(txt === 'Cambio de med.') bloqueCambioMedidor.style.display = 'block';
+      if(txt === 'Error de lectura') bloqueErrorLectura.style.display = 'block';
     }
-    if(txt === 'Error de lectura'){
-      bloqueErrorLectura.style.display = 'block';
-    }
+    txtDesc.value = partes.join(' · ');
+    marcarChips();
     guardarMem(); pedirRender();
   });
 
@@ -2440,6 +2468,7 @@ return {QRCode:R("index"),ECL:R("QRErrorCorrectLevel")};})();
   // =============== nueva foto ===============
   function iniciarNuevaFoto(){
     txtDesc.value = '';
+    marcarChips();
     inpMedidor.value = '';
     inpLectura.value = '';
     inpMedidorNuevo.value = '';
