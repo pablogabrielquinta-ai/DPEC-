@@ -283,7 +283,7 @@
   <div class="logo">DP</div>
   <div>
     <h1>MedidorClic</h1>
-    <div class="sub">Sello de remesa · ruta · novedad · v45</div>
+    <div class="sub">Sello de remesa · ruta · novedad · v46</div>
   </div>
   <button type="button" class="btn-informe" id="btnInforme">📋 Informe</button>
 </header>
@@ -350,7 +350,7 @@
       <button type="button" id="btnFoto2Gal" class="btn-galeria" style="margin-top:0;flex:1;">🖼️ Galería</button>
     </div>
 
-    <form id="datos" onsubmit="return false;">
+    <form id="datos" autocomplete="off" onsubmit="return false;">
       <div class="fila" style="margin-top:16px;">
         <div class="campo">
           <label for="remesa">Remesa</label>
@@ -1936,7 +1936,7 @@ return {QRCode:R("index"),ECL:R("QRErrorCorrectLevel")};})();
     if(fotos.length === 1){
       fotoDataURL = off.toDataURL('image/jpeg', 0.8);
       fechaFoto = new Date();
-      inpMedidor.value = ''; inpMedidorNuevo.value = ''; inpLecturaNueva.value = ''; bloqueCambioMedidor.style.display = 'none'; inpEstadoLectura.value = ''; bloqueErrorLectura.style.display = 'none'; // blindaje: primera foto de una novedad nueva, siempre arranca vacío
+      inpMedidor.value = ''; inpMedidorNuevo.value = ''; inpLecturaNueva.value = ''; bloqueCambioMedidor.style.display = 'none'; inpEstadoLectura.value = ''; bloqueErrorLectura.style.display = 'none'; inpLectura.value = ''; txtDesc.value = ''; marcarChips(); // blindaje: primera foto de una novedad nueva, siempre arranca vacío (medidor, lectura, novedad y chips)
     }
     cerrarCamara();
     mostrarEdicion();
@@ -2105,7 +2105,7 @@ return {QRCode:R("index"),ECL:R("QRErrorCorrectLevel")};})();
       if(fotos.length === 1){
         fotoDataURL = off.toDataURL('image/jpeg', 0.8);
         fechaFoto = new Date();
-        inpMedidor.value = ''; inpMedidorNuevo.value = ''; inpLecturaNueva.value = ''; bloqueCambioMedidor.style.display = 'none'; inpEstadoLectura.value = ''; bloqueErrorLectura.style.display = 'none'; // blindaje: primera foto de una novedad nueva, siempre arranca vacío
+        inpMedidor.value = ''; inpMedidorNuevo.value = ''; inpLecturaNueva.value = ''; bloqueCambioMedidor.style.display = 'none'; inpEstadoLectura.value = ''; bloqueErrorLectura.style.display = 'none'; inpLectura.value = ''; txtDesc.value = ''; marcarChips(); // blindaje: primera foto de una novedad nueva, siempre arranca vacío (medidor, lectura, novedad y chips)
       }
       inputFoto.value = '';
       mostrarEdicion();
