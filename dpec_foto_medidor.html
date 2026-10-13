@@ -283,7 +283,7 @@
   <div class="logo">DP</div>
   <div>
     <h1>MedidorClic</h1>
-    <div class="sub">Sello de remesa · ruta · novedad · v46</div>
+    <div class="sub">Sello de remesa · ruta · novedad · v47</div>
   </div>
   <button type="button" class="btn-informe" id="btnInforme">📋 Informe</button>
 </header>
@@ -395,6 +395,8 @@
           <button type="button" class="chip" data-txt="Medidor Dañado"><span class="chip-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3L2 20h20L12 3z"/><path d="M12 10v4"/><path d="M12 17.2v.1"/></svg></span>Medidor Dañado</button>
           <button type="button" class="chip" data-txt="Quiebre de consumo"><span class="chip-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h5l2-5 3 10 2-5h6"/></svg></span>Quiebre de consumo</button>
           <button type="button" class="chip" data-txt="Error de lectura"><span class="chip-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9 9l6 6M15 9l-6 6"/></svg></span>Error de lectura</button>
+          <button type="button" class="chip" data-txt="Giro al revés"><span class="chip-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg></span>Giro al revés</button>
+          <button type="button" class="chip" data-txt="Disco trabado"><span class="chip-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="12" rx="9" ry="4.5"/><path d="M10 9.5v5M14 9.5v5"/></svg></span>Disco trabado</button>
           <button type="button" class="chip" data-txt="Ord.13 Obras"><span class="chip-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.5 4h5l5 16h-15z"/><path d="M7.6 10h8.8M6.4 14.5h11.2"/><path d="M3 20h18"/></svg></span>Ord.13 Obras</button>
         </div>
         <textarea id="descripcion" placeholder="Ej: Medidor con tapa rota, visor empañado, no se puede leer el estado."></textarea>
@@ -2506,7 +2508,7 @@ return {QRCode:R("index"),ECL:R("QRErrorCorrectLevel")};})();
   var CLAVE_REG = 'mc_registro_envios_v1';
   var CLAVE_ULT = 'mc_ultimo_informe_v1';
   var CHIPS_INF = ['No imp','Alta','Apagado','Exceso de consumo','45/5 primera vez','Ver baja','Lec. Menor',
-                   'Cambio de med.','Medidor Dañado','Quiebre de consumo','Error de lectura','Ord.13 Obras'];
+                   'Cambio de med.','Medidor Dañado','Quiebre de consumo','Error de lectura','Giro al revés','Disco trabado','Ord.13 Obras'];
   var btnInforme   = document.getElementById('btnInforme');
   var informeFondo = document.getElementById('informeFondo');
   var informeSub   = document.getElementById('informeSub');
