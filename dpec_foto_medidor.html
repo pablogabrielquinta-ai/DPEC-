@@ -101,6 +101,13 @@
     cursor:pointer;flex-shrink:0;
   }
   .btn-disparo:active{transform:scale(0.93);}
+  .cod-visor{
+    position:absolute;left:10px;top:10px;z-index:3;display:none;
+    background:rgba(0,0,0,0.65);color:var(--green);border:1px solid var(--green);
+    border-radius:8px;padding:6px 10px;font-size:14px;font-weight:800;
+    font-family:ui-monospace,Menlo,monospace;
+  }
+  .cod-visor.visible{display:block;}
   .scan-hint{
     position:absolute;left:0;right:0;top:0;
     padding:10px;background:rgba(0,0,0,0.6);
@@ -283,7 +290,7 @@
   <div class="logo">DP</div>
   <div>
     <h1>MedidorClic</h1>
-    <div class="sub">Sello de remesa · ruta · novedad · v49</div>
+    <div class="sub">Sello de remesa · ruta · novedad · v50</div>
   </div>
   <button type="button" class="btn-informe" id="btnInforme">📋 Informe</button>
 </header>
@@ -327,6 +334,7 @@
       <div class="zoom-ctl" id="zoomCtl">
         <span>−</span><input type="range" id="zoomSlider"><span>+</span>
       </div>
+      <div class="cod-visor" id="codVisor"></div>
       <div class="scan-hint" id="scanHint">Apuntá al código de barras del medidor</div>
     </div>
     <div class="barra-disparo">
@@ -1741,6 +1749,8 @@ return {QRCode:R("index"),ECL:R("QRErrorCorrectLevel")};})();
   var gps         = null;   // {lat, lon} o null
   var timerRender = null;
   var modoCamara  = 'foto';   // 'foto' o 'scan'
+  var codigoVisor = '';       // código leído solo en el visor, para la foto que se va a sacar
+  var autoTimer   = null;
   var scanTimer   = null;
   var detector    = null;
   var scanDestino = null;   // campo que recibe el código escaneado
@@ -1890,6 +1900,7 @@ return {QRCode:R("index"),ECL:R("QRErrorCorrectLevel")};})();
       mostrarPantalla('camara');
       setTimeout(configurarControlesCamara, 500);
       if(esScan) iniciarEscaneo();
+      else iniciarAutoScan();
     }).catch(function(err){
       if(err && (err.name === 'NotAllowedError' || err.name === 'SecurityError')){
         if(location.protocol === 'file:'){
@@ -1907,6 +1918,8 @@ return {QRCode:R("index"),ECL:R("QRErrorCorrectLevel")};})();
 
   function cerrarCamara(){
     clearInterval(scanTimer); scanTimer = null;
+    clearInterval(autoTimer); autoTimer = null;
+    codVisorEl().classList.remove('visible');
     clearTimeout(zoomThrottleTimer); zoomThrottleTimer = null; zoomPendiente = null;
     track = null; torchOn = false;
     btnLinterna.classList.remove('activa');
@@ -1938,8 +1951,10 @@ return {QRCode:R("index"),ECL:R("QRErrorCorrectLevel")};})();
     if(fotos.length === 1){
       fotoDataURL = off.toDataURL('image/jpeg', 0.8);
       fechaFoto = new Date();
-      inpMedidor.value = ''; inpMedidorNuevo.value = ''; inpLecturaNueva.value = ''; bloqueCambioMedidor.style.display = 'none'; inpEstadoLectura.value = ''; bloqueErrorLectura.style.display = 'none'; inpLectura.value = ''; txtDesc.value = ''; marcarChips(); // blindaje: primera foto de una novedad nueva, siempre arranca vacío (medidor, lectura, novedad y chips)
+      inpMedidor.value = codigoVisor; inpMedidorNuevo.value = ''; inpLecturaNueva.value = ''; bloqueCambioMedidor.style.display = 'none'; inpEstadoLectura.value = ''; bloqueErrorLectura.style.display = 'none'; inpLectura.value = ''; txtDesc.value = ''; marcarChips(); // blindaje: primera foto de una novedad nueva, siempre arranca vacío (medidor, lectura, novedad y chips)
     }
+    if(fotos.length === 2 && codigoVisor && !inpMedidor.value.trim()) inpMedidor.value = codigoVisor;
+    codigoVisor = '';
     cerrarCamara();
     mostrarEdicion();
     pedirGps();
@@ -2045,6 +2060,49 @@ return {QRCode:R("index"),ECL:R("QRErrorCorrectLevel")};})();
   }, {passive:false});
   video.addEventListener('touchend', function(){ baseDist = 0; }, {passive:true});
 
+  // =============== lectura automática del código en el visor ===============
+  // Mientras la cámara está abierta para sacar la foto, se busca el código de barras.
+  // Si aparece: vibra, se muestra arriba a la izquierda y se carga al sacar la foto.
+  function codVisorEl(){ return document.getElementById('codVisor'); }
+  function crearDetector(){
+    if(!('BarcodeDetector' in window)) return null;
+    try{ return new BarcodeDetector({ formats: ['code_128','code_39','itf','ean_13','ean_8','upc_a','upc_e','codabar','qr_code','data_matrix'] }); }
+    catch(e){ try{ return new BarcodeDetector(); }catch(e2){ return null; } }
+  }
+  function iniciarAutoScan(){
+    clearInterval(autoTimer); autoTimer = null;
+    codigoVisor = '';
+    codVisorEl().classList.remove('visible');
+    // solo para la primera foto, o si todavía no hay número cargado
+    if(fotos.length && inpMedidor.value.trim()) return;
+    var det = crearDetector(); if(!det) return;
+    var ocupado = false;
+    autoTimer = setInterval(function(){
+      if(ocupado || !stream || !video.videoWidth) return;
+      ocupado = true;
+      det.detect(video).then(function(codigos){
+        ocupado = false;
+        if(!autoTimer || !codigos || !codigos.length) return;
+        var val = (codigos[0].rawValue || '').trim();
+        if(!val) return;
+        clearInterval(autoTimer); autoTimer = null;   // ya está: deja de buscar
+        codigoVisor = val;
+        if(navigator.vibrate) navigator.vibrate(120);
+        var el = codVisorEl(); el.textContent = 'Medidor ' + val; el.classList.add('visible');
+      }).catch(function(){ ocupado = false; });
+    }, 400);
+  }
+  function leerCodigoDeImagen(fuente){
+    var det = crearDetector(); if(!det) return;
+    det.detect(fuente).then(function(codigos){
+      if(!codigos || !codigos.length || inpMedidor.value.trim()) return;
+      var val = (codigos[0].rawValue || '').trim(); if(!val) return;
+      inpMedidor.value = val;
+      if(navigator.vibrate) navigator.vibrate(120);
+      pedirRender();
+    }).catch(function(){});
+  }
+
   // =============== escáner de código de barras (N° de medidor) ===============
   function pedirEscaneo(destino){
     ocultarAviso();
@@ -2110,6 +2168,7 @@ return {QRCode:R("index"),ECL:R("QRErrorCorrectLevel")};})();
         inpMedidor.value = ''; inpMedidorNuevo.value = ''; inpLecturaNueva.value = ''; bloqueCambioMedidor.style.display = 'none'; inpEstadoLectura.value = ''; bloqueErrorLectura.style.display = 'none'; inpLectura.value = ''; txtDesc.value = ''; marcarChips(); // blindaje: primera foto de una novedad nueva, siempre arranca vacío (medidor, lectura, novedad y chips)
       }
       inputFoto.value = '';
+      leerCodigoDeImagen(off);
       mostrarEdicion();
       pedirGps();
       render();
