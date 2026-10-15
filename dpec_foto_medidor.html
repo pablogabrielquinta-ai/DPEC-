@@ -290,7 +290,7 @@
   <div class="logo">DP</div>
   <div>
     <h1>MedidorClic</h1>
-    <div class="sub">Sello de remesa · ruta · novedad · v50</div>
+    <div class="sub">Sello de remesa · ruta · novedad · v51</div>
   </div>
   <button type="button" class="btn-informe" id="btnInforme">📋 Informe</button>
 </header>
@@ -2634,6 +2634,19 @@ return {QRCode:R("index"),ECL:R("QRErrorCorrectLevel")};})();
       t.push('');
       t.push('*REMESA ' + rr[0] + ' · RUTA ' + rr[1] + '* · ' + lista.length + (lista.length === 1 ? ' novedad' : ' novedades'));
       res.forEach(function(r){ t.push(r); });
+      t.push('Detalle:');
+      lista.forEach(function(e, i){
+        var d = new Date(e.t);
+        var mismoDia = d.toDateString() === ahora.toDateString();
+        var l = (i+1) + '. ' + (mismoDia ? '' : dosDig(d.getDate()) + '/' + dosDig(d.getMonth()+1) + ' ') +
+                dosDig(d.getHours()) + ':' + dosDig(d.getMinutes());
+        l += ' · Med ' + (e.med || 's/n');
+        if(e.lect) l += ' · Lect ' + e.lect;
+        l += ' · ' + (e.nov || 'sin novedad escrita');
+        if(e.medAnt || e.lectFin) l += ' (med. anterior ' + (e.medAnt || 's/n') + (e.lectFin ? ', lect. final ' + e.lectFin : '') + ')';
+        if(e.estado) l += ' (estado: ' + e.estado + ')';
+        t.push(l);
+      });
     });
     t.push('');
     t.push('Total: ' + reg.length + (reg.length === 1 ? ' novedad' : ' novedades') + ' en ' + orden.length + (orden.length === 1 ? ' ruta' : ' rutas'));
