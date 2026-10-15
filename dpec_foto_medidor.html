@@ -290,7 +290,7 @@
   <div class="logo">DP</div>
   <div>
     <h1>MedidorClic</h1>
-    <div class="sub">Sello de remesa · ruta · novedad · v51</div>
+    <div class="sub">Sello de remesa · ruta · novedad · v53</div>
   </div>
   <button type="button" class="btn-informe" id="btnInforme">📋 Informe</button>
 </header>
@@ -299,6 +299,7 @@
   <div class="informe-panel">
     <h2>Informe de ruta</h2>
     <div class="sub2" id="informeSub"></div>
+    <img id="informeMapa" alt="Mapa de las novedades" style="display:none;width:100%;border-radius:10px;border:1px solid var(--line);margin-bottom:10px;max-height:38vh;object-fit:contain;background:#0e1216;">
     <div class="informe-pre" id="informeTexto"></div>
     <div class="informe-botones">
       <button type="button" class="btn-sec" id="btnInformeCerrar">Volver</button>
@@ -405,6 +406,7 @@
           <button type="button" class="chip" data-txt="Error de lectura"><span class="chip-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9 9l6 6M15 9l-6 6"/></svg></span>Error de lectura</button>
           <button type="button" class="chip" data-txt="Giro al revés"><span class="chip-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg></span>Giro al revés</button>
           <button type="button" class="chip" data-txt="Disco trabado"><span class="chip-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="12" rx="9" ry="4.5"/><path d="M10 9.5v5M14 9.5v5"/></svg></span>Disco trabado</button>
+          <button type="button" class="chip" data-txt="Display dañado/opaco"><span class="chip-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M9 6l2 5-3 3 2 4"/><path d="M15 9.5h3M15 13h2"/></svg></span>Display dañado/opaco</button>
           <button type="button" class="chip" data-txt="Ord.13 Obras"><span class="chip-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.5 4h5l5 16h-15z"/><path d="M7.6 10h8.8M6.4 14.5h11.2"/><path d="M3 20h18"/></svg></span>Ord.13 Obras</button>
         </div>
         <textarea id="descripcion" placeholder="Ej: Medidor con tapa rota, visor empañado, no se puede leer el estado."></textarea>
@@ -2189,7 +2191,7 @@ return {QRCode:R("index"),ECL:R("QRErrorCorrectLevel")};})();
     }, function(){
       gps = null;
       pedirRender();
-    }, { enableHighAccuracy:true, timeout:10000, maximumAge:60000 });
+    }, { enableHighAccuracy:true, timeout:10000, maximumAge:5000 });
   }
 
 
@@ -2567,7 +2569,7 @@ return {QRCode:R("index"),ECL:R("QRErrorCorrectLevel")};})();
   var CLAVE_REG = 'mc_registro_envios_v1';
   var CLAVE_ULT = 'mc_ultimo_informe_v1';
   var CHIPS_INF = ['No imp','Alta','Apagado','Exceso de consumo','45/5 primera vez','Ver baja','Lec. Menor',
-                   'Cambio de med.','Medidor Dañado','Quiebre de consumo','Error de lectura','Giro al revés','Disco trabado','Ord.13 Obras'];
+                   'Cambio de med.','Medidor Dañado','Quiebre de consumo','Error de lectura','Giro al revés','Disco trabado','Display dañado/opaco','Ord.13 Obras'];
   var btnInforme   = document.getElementById('btnInforme');
   var informeFondo = document.getElementById('informeFondo');
   var informeSub   = document.getElementById('informeSub');
@@ -2591,7 +2593,8 @@ return {QRCode:R("index"),ECL:R("QRErrorCorrectLevel")};})();
       med: inpMedidor.value.trim(), lect: inpLectura.value.trim(),
       nov: txtDesc.value.trim(),
       medAnt: inpMedidorNuevo.value.trim(), lectFin: inpLecturaNueva.value.trim(),
-      estado: inpEstadoLectura.value.trim()
+      estado: inpEstadoLectura.value.trim(),
+      lat: gps ? +gps.lat.toFixed(5) : null, lon: gps ? +gps.lon.toFixed(5) : null
     });
     guardarReg(r);
     pintarBotonInforme();
@@ -2620,6 +2623,7 @@ return {QRCode:R("index"),ECL:R("QRErrorCorrectLevel")};})();
     var t = [];
     t.push('📋 *INFORME DE RUTA* · MedidorClic');
     t.push('📅 ' + hoyTxt + ' · ' + dosDig(ahora.getHours()) + ':' + dosDig(ahora.getMinutes()) + ' hs');
+    var num = 0;
     orden.forEach(function(k){
       var lista = grupos[k], rr = k.split('|'), cuenta = {}, otras = 0;
       lista.forEach(function(e){
@@ -2635,16 +2639,18 @@ return {QRCode:R("index"),ECL:R("QRErrorCorrectLevel")};})();
       t.push('*REMESA ' + rr[0] + ' · RUTA ' + rr[1] + '* · ' + lista.length + (lista.length === 1 ? ' novedad' : ' novedades'));
       res.forEach(function(r){ t.push(r); });
       t.push('Detalle:');
-      lista.forEach(function(e, i){
+      lista.forEach(function(e){
+        num++;
         var d = new Date(e.t);
         var mismoDia = d.toDateString() === ahora.toDateString();
-        var l = (i+1) + '. ' + (mismoDia ? '' : dosDig(d.getDate()) + '/' + dosDig(d.getMonth()+1) + ' ') +
+        var l = num + '. ' + (mismoDia ? '' : dosDig(d.getDate()) + '/' + dosDig(d.getMonth()+1) + ' ') +
                 dosDig(d.getHours()) + ':' + dosDig(d.getMinutes());
         l += ' · Med ' + (e.med || 's/n');
         if(e.lect) l += ' · Lect ' + e.lect;
         l += ' · ' + (e.nov || 'sin novedad escrita');
         if(e.medAnt || e.lectFin) l += ' (med. anterior ' + (e.medAnt || 's/n') + (e.lectFin ? ', lect. final ' + e.lectFin : '') + ')';
         if(e.estado) l += ' (estado: ' + e.estado + ')';
+        if(e.lat != null && e.lon != null) l += ' · 📍' + e.lat.toFixed(5) + ',' + e.lon.toFixed(5);
         t.push(l);
       });
     });
@@ -2653,8 +2659,126 @@ return {QRCode:R("index"),ECL:R("QRErrorCorrectLevel")};})();
     return { texto: t.join('\n'), rutas: orden.length };
   }
 
+
+  // =============== mapa del informe (imagen que acompaña el mensaje) ===============
+  var TIPOS_MAPA = [
+    ['Apagado','#FF4D4D'], ['No imp','#FFC53D'], ['Medidor Dañado','#FF8A3D'], ['Error de lectura','#D64DFF'],
+    ['Cambio de med.','#3D8BFF'], ['Exceso de consumo','#22C55E'], ['Quiebre de consumo','#14B8A6'],
+    ['Lec. Menor','#60A5FA'], ['Giro al revés','#A855F7'], ['Disco trabado','#8B5E3C'], ['Display dañado/opaco','#EC4899'], ['Alta','#10B981'],
+    ['45/5 primera vez','#EAB308'], ['Ver baja','#6366F1'], ['Ord.13 Obras','#F97316'], ['Otras','#6B7280']
+  ];
+  function tipoMapa(nov){
+    for(var i=0;i<TIPOS_MAPA.length-1;i++){ if((nov||'').indexOf(TIPOS_MAPA[i][0]) >= 0) return i; }
+    return TIPOS_MAPA.length-1;
+  }
+  var blobMapa = null, mapaPendiente = null;
+  function armarMapaInforme(reg){
+    // mismos números que el detalle del informe (agrupado por ruta, numeración corrida)
+    var grupos = {}, orden = [];
+    reg.forEach(function(e){ var k = (e.remesa||'-') + '|' + (e.ruta||'-'); if(!grupos[k]){ grupos[k]=[]; orden.push(k);} grupos[k].push(e); });
+    var pts = [], n = 0;
+    orden.forEach(function(k){ grupos[k].forEach(function(e){ n++; if(e.lat != null && e.lon != null) pts.push({ n:n, lat:e.lat, lon:e.lon, tipo:tipoMapa(e.nov) }); }); });
+    if(!pts.length) return Promise.resolve(null);
+
+    var W = 1000, MH = 860, CAB = 74, PIE = 0;
+    var tiposUsados = {}; pts.forEach(function(p){ tiposUsados[p.tipo] = (tiposUsados[p.tipo]||0) + 1; });
+    var claves = Object.keys(tiposUsados).map(Number).sort(function(a,b){ return a-b; });
+    PIE = 24 + Math.ceil(claves.length / 2) * 44 + 16;
+    function lx(lon,z){ return (lon + 180) / 360 * 256 * Math.pow(2,z); }
+    function ly(lat,z){ var r = lat*Math.PI/180; return (1 - Math.log(Math.tan(r) + 1/Math.cos(r)) / Math.PI) / 2 * 256 * Math.pow(2,z); }
+    var minLa = Infinity, maxLa = -Infinity, minLo = Infinity, maxLo = -Infinity;
+    pts.forEach(function(p){ minLa=Math.min(minLa,p.lat); maxLa=Math.max(maxLa,p.lat); minLo=Math.min(minLo,p.lon); maxLo=Math.max(maxLo,p.lon); });
+    var z = 17, pad = 90;
+    while(z > 3 && ((lx(maxLo,z)-lx(minLo,z)) > W - 2*pad || (ly(minLa,z)-ly(maxLa,z)) > MH - 2*pad)) z--;
+    var cx = (lx(minLo,z) + lx(maxLo,z)) / 2, cy = (ly(minLa,z) + ly(maxLa,z)) / 2;
+    var x0 = cx - W/2, y0 = cy - MH/2;
+
+    var cv = document.createElement('canvas'); cv.width = W; cv.height = CAB + MH + PIE;
+    var g = cv.getContext('2d');
+    g.fillStyle = '#E9EDF1'; g.fillRect(0, CAB, W, MH);
+    // fondo de respaldo (si no hay señal): cuadrícula suave
+    g.strokeStyle = '#D3D9DF'; g.lineWidth = 1;
+    for(var gx = 0; gx <= W; gx += 50){ g.beginPath(); g.moveTo(gx, CAB); g.lineTo(gx, CAB+MH); g.stroke(); }
+    for(var gy = 0; gy <= MH; gy += 50){ g.beginPath(); g.moveTo(0, CAB+gy); g.lineTo(W, CAB+gy); g.stroke(); }
+
+    var tx0 = Math.floor(x0/256), tx1 = Math.floor((x0+W)/256), ty0 = Math.floor(y0/256), ty1 = Math.floor((y0+MH)/256);
+    var cargas = [], conFondo = false, max = Math.pow(2,z);
+    for(var tx = tx0; tx <= tx1; tx++) for(var ty = ty0; ty <= ty1; ty++){
+      if(ty < 0 || ty >= max) continue;
+      (function(tx, ty){
+        cargas.push(new Promise(function(res){
+          var im = new Image(); im.crossOrigin = 'anonymous';
+          var listo = false, fin = function(ok){ if(listo) return; listo = true; if(ok){ g.drawImage(im, tx*256 - x0, CAB + ty*256 - y0); conFondo = true; } res(); };
+          im.onload = function(){ fin(true); }; im.onerror = function(){ fin(false); };
+          setTimeout(function(){ fin(false); }, 7000);
+          im.src = 'https://tile.openstreetmap.org/' + z + '/' + (((tx % max) + max) % max) + '/' + ty + '.png';
+        }));
+      })(tx, ty);
+    }
+    return Promise.all(cargas).then(function(){
+      // puntos
+      var puestos = [];
+      pts.forEach(function(p){
+        var px = lx(p.lon,z) - x0, py = CAB + ly(p.lat,z) - y0;
+        // si cae encima de otro punto (vecinos pegados), se corre un poco alrededor
+        var intento = 0, bx = px, by = py;
+        while(intento < 24 && puestos.some(function(q){ return Math.hypot(q[0]-px, q[1]-py) < 36; })){
+          intento++;
+          var ang = intento * 2.4, rad = 34 + 6 * Math.floor(intento / 6);
+          px = bx + Math.cos(ang) * rad; py = by + Math.sin(ang) * rad;
+        }
+        if(intento){
+          g.beginPath(); g.moveTo(bx, by); g.lineTo(px, py);
+          g.lineWidth = 2; g.strokeStyle = 'rgba(20,24,29,0.6)'; g.stroke();
+        }
+        puestos.push([px, py]);
+        g.beginPath(); g.arc(px, py, 19, 0, Math.PI*2);
+        g.fillStyle = TIPOS_MAPA[p.tipo][1]; g.fill();
+        g.lineWidth = 4; g.strokeStyle = '#FFFFFF'; g.stroke();
+        g.fillStyle = '#FFFFFF'; g.font = '800 20px system-ui, sans-serif';
+        g.textAlign = 'center'; g.textBaseline = 'middle';
+        g.lineWidth = 3; g.strokeStyle = 'rgba(0,0,0,0.55)'; g.strokeText(String(p.n), px, py + 1);
+        g.fillText(String(p.n), px, py + 1);
+      });
+      // cabecera
+      g.fillStyle = '#14181D'; g.fillRect(0, 0, W, CAB);
+      g.fillStyle = '#FFC53D'; g.fillRect(0, CAB - 4, W, 4);
+      var hoy = new Date();
+      var rutasTxt = orden.map(function(k){ var r = k.split('|'); return 'R' + r[0] + ' Ruta ' + r[1]; }).join(' · ');
+      g.textAlign = 'left'; g.textBaseline = 'middle';
+      g.fillStyle = '#FFC53D'; g.font = '800 28px system-ui, sans-serif';
+      g.fillText('Mapa de novedades', 24, 28);
+      g.fillStyle = '#E8EDF2'; g.font = '600 20px system-ui, sans-serif';
+      var sub = dosDig(hoy.getDate()) + '/' + dosDig(hoy.getMonth()+1) + '/' + hoy.getFullYear() + ' · ' + rutasTxt;
+      if(g.measureText(sub).width > W - 48) sub = sub.slice(0, 70) + '…';
+      g.fillText(sub, 24, 56);
+      // crédito del mapa / aviso sin fondo
+      g.font = '600 15px system-ui, sans-serif'; g.textAlign = 'right';
+      var cred = conFondo ? '© OpenStreetMap' : 'Sin mapa de fondo (sin señal) · posiciones aproximadas';
+      var cw = g.measureText(cred).width + 16;
+      g.fillStyle = 'rgba(255,255,255,0.85)'; g.fillRect(W - cw - 6, CAB + MH - 28, cw, 22);
+      g.fillStyle = '#333'; g.fillText(cred, W - 14, CAB + MH - 16);
+      // leyenda
+      var y = CAB + MH; g.fillStyle = '#14181D'; g.fillRect(0, y, W, PIE);
+      g.textAlign = 'left'; g.font = '700 21px system-ui, sans-serif';
+      claves.forEach(function(t, i){
+        var col = i % 2, fila = Math.floor(i / 2);
+        var lxp = 30 + col * (W/2), lyp = y + 34 + fila * 44;
+        g.beginPath(); g.arc(lxp + 10, lyp, 11, 0, Math.PI*2); g.fillStyle = TIPOS_MAPA[t][1]; g.fill();
+        g.lineWidth = 3; g.strokeStyle = '#FFFFFF'; g.stroke();
+        g.fillStyle = '#E8EDF2'; g.fillText(TIPOS_MAPA[t][0] + ': ' + tiposUsados[t], lxp + 32, lyp + 1);
+      });
+      return new Promise(function(res){
+        try{ cv.toBlob(function(b){ res(b); }, 'image/jpeg', 0.85); }catch(e){ res(null); }
+      });
+    }).catch(function(){ return null; });
+  }
+
   function abrirInforme(texto, sub, reenvio){
     textoInforme = texto; esReenvio = reenvio;
+    blobMapa = null; mapaPendiente = null; btnInformeEnviar.disabled = false;
+    pasoMapa = null; btnInformeEnviar.textContent = 'Enviar ➤ WhatsApp';
+    var imgM0 = document.getElementById('informeMapa'); imgM0.style.display = 'none'; imgM0.removeAttribute('src');
     informeSub.textContent = sub;
     informeTexto.textContent = texto;
     var ult = null; try{ ult = localStorage.getItem(CLAVE_ULT); }catch(e){}
@@ -2673,6 +2797,18 @@ return {QRCode:R("index"),ECL:R("QRErrorCorrectLevel")};})();
     }
     var inf = armarInforme(reg);
     abrirInforme(inf.texto, reg.length + ' envíos · ' + inf.rutas + (inf.rutas === 1 ? ' ruta' : ' rutas') + ' · así llega al grupo', false);
+    var imgM = document.getElementById('informeMapa');
+    var conGps = reg.filter(function(e){ return e.lat != null; }).length;
+    if(conGps){
+      informeSub.textContent += ' · preparando el mapa…';
+      btnInformeEnviar.disabled = true;
+      mapaPendiente = armarMapaInforme(reg).then(function(b){
+        blobMapa = b;
+        btnInformeEnviar.disabled = false;
+        informeSub.textContent = informeSub.textContent.replace(' · preparando el mapa…', b ? ' · con mapa' : '');
+        if(b){ imgM.src = URL.createObjectURL(b); imgM.style.display = 'block'; }
+      });
+    }
   });
   btnInformeCerrar.addEventListener('click', cerrarInforme);
   informeFondo.addEventListener('click', function(ev){ if(ev.target === informeFondo) cerrarInforme(); });
@@ -2691,7 +2827,35 @@ return {QRCode:R("index"),ECL:R("QRErrorCorrectLevel")};})();
     mostrarAviso('✅ Informe enviado. ¡Gracias por tu trabajo! La lista quedó limpia para la próxima ruta.', true);
   }
 
+  var pasoMapa = null;   // segundo paso: falta mandar la imagen del mapa
   btnInformeEnviar.addEventListener('click', function(){
+    if(pasoMapa){
+      navigator.share({ files: [pasoMapa] }).then(function(){
+        pasoMapa = null; btnInformeEnviar.textContent = 'Enviar ➤ WhatsApp';
+        informeEnviado();
+      }).catch(function(){});
+      return;
+    }
+    if(blobMapa && navigator.share){
+      var f = new File([blobMapa], 'mapa_novedades.jpg', { type: 'image/jpeg' });
+      if(navigator.canShare && navigator.canShare({ files: [f] })){
+        if(textoInforme.length <= 900){
+          // corto: la imagen del mapa va con el informe como texto al pie
+          navigator.share({ files: [f], text: textoInforme }).then(informeEnviado).catch(function(err){
+            if(err && err.name === 'AbortError') return;
+            navigator.share({ text: textoInforme }).then(informeEnviado).catch(function(){});
+          });
+        } else {
+          // largo: WhatsApp puede cortar el texto al pie de una imagen, así que va en dos pasos
+          navigator.share({ text: textoInforme }).then(function(){
+            btnInformeEnviar.textContent = 'Enviar el mapa ➤';
+            informeSub.textContent = '✅ Informe enviado. Ahora tocá "Enviar el mapa" y elegí el mismo grupo.';
+            pasoMapa = f;
+          }).catch(function(err){ if(err && err.name !== 'AbortError') abrirWhatsAppTexto(); });
+        }
+        return;
+      }
+    }
     if(navigator.share){
       navigator.share({ text: textoInforme }).then(informeEnviado).catch(function(err){
         if(err && err.name === 'AbortError') return;

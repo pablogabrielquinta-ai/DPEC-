@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#14181D">
+<title>Visor de Novedades · MedidorClic</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+  :root{
+    --bg:#14181D; --panel:#1D242C; --panel2:#242D37; --line:#313C48;
+    --text:#E8EDF2; --muted:#8B98A5; --accent:#FFC53D; --accent-dark:#1A1300;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html,body{background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;}
+  header{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line);}
+  .logo{width:38px;height:38px;border-radius:9px;background:var(--accent);color:var(--accent-dark);
+    display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px;flex-shrink:0;}
+  header h1{font-size:16px;}
+  header .sub{font-size:11px;color:var(--muted);margin-top:1px;}
+  main{max-width:1100px;margin:0 auto;padding:14px 16px 40px;display:flex;flex-direction:column;gap:12px;}
+  .caja{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:10px;}
+  label{font-size:11.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);}
+  textarea{width:100%;min-height:110px;resize:vertical;background:var(--panel2);border:1px solid var(--line);color:var(--text);
+    border-radius:10px;padding:10px;font-size:13px;font-family:ui-monospace,Menlo,monospace;line-height:1.4;}
+  textarea:focus{outline:2px solid var(--accent);border-color:var(--accent);}
+  .botones{display:flex;flex-wrap:wrap;gap:8px;}
+  button{font-family:inherit;cursor:pointer;border-radius:10px;font-weight:700;font-size:14px;padding:11px 14px;}
+  .b-prim{background:var(--accent);color:var(--accent-dark);border:none;}
+  .b-sec{background:var(--panel2);color:var(--text);border:1px solid var(--line);}
+  button:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+  .resumen{font-size:13px;color:var(--muted);}
+  .resumen b{color:var(--text);}
+  #mapa{height:62vh;min-height:340px;border-radius:12px;border:1px solid var(--line);overflow:hidden;background:#0e1216;}
+  .leyenda{display:flex;flex-wrap:wrap;gap:6px;}
+  .ley{display:inline-flex;align-items:center;gap:6px;background:var(--panel2);border:1px solid var(--line);color:var(--text);
+    border-radius:20px;font-size:12.5px;font-weight:700;padding:6px 11px;cursor:pointer;user-select:none;}
+  .ley .pto{width:11px;height:11px;border-radius:50%;border:2px solid #fff;flex-shrink:0;}
+  .ley.off{opacity:.35;}
+  .ley .n{color:var(--muted);font-variant-numeric:tabular-nums;}
+  .sin-gps{font-size:12.5px;color:var(--muted);line-height:1.6;}
+  .sin-gps li{margin-left:18px;}
+  .leaflet-popup-content{font-size:13px;line-height:1.45;}
+  .leaflet-popup-content b{font-size:13.5px;}
+  .aviso{font-size:13px;color:var(--accent);}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">DP</div>
+  <div>
+    <h1>Visor de novedades</h1>
+    <div class="sub">Mapa de los informes de ruta de MedidorClic</div>
+  </div>
+</header>
+
+<main>
+  <div class="caja">
+    <label for="entrada">Pegá acá los informes del grupo (uno o varios)</label>
+    <textarea id="entrada" placeholder="Copiá el informe de WhatsApp (mantené apretado el mensaje → Copiar) y pegalo acá. Podés pegar varios, uno abajo del otro."></textarea>
+    <div class="botones">
+      <button type="button" class="b-prim" id="btnVer">Ver en el mapa</button>
+      <button type="button" class="b-sec" id="btnEjemplo">Cargar ejemplo</button>
+      <button type="button" class="b-sec" id="btnLimpiar">Limpiar</button>
+    </div>
+    <div class="resumen" id="resumen">Todavía no hay informes cargados.</div>
+  </div>
+
+  <div class="leyenda" id="leyenda"></div>
+  <div id="mapa"></div>
+  <div class="caja" id="cajaSinGps" hidden>
+    <label>Novedades sin ubicación (no se encontró GPS)</label>
+    <ul class="sin-gps" id="sinGps"></ul>
+  </div>
+</main>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+// ---------- tipos de novedad y colores ----------
+var TIPOS = [
+  ['Apagado','#FF4D4D'], ['No imp','#FFC53D'], ['Medidor Dañado','#FF8A3D'], ['Error de lectura','#D64DFF'],
+  ['Cambio de med.','#3D8BFF'], ['Exceso de consumo','#22C55E'], ['Quiebre de consumo','#14B8A6'],
+  ['Lec. Menor','#60A5FA'], ['Giro al revés','#A855F7'], ['Disco trabado','#8B5E3C'], ['Display dañado/opaco','#EC4899'], ['Alta','#10B981'],
+  ['45/5 primera vez','#EAB308'], ['Ver baja','#6366F1'], ['Ord.13 Obras','#F97316'], ['Otras','#6B7280']
+];
+var COLOR = {}; TIPOS.forEach(function(t){ COLOR[t[0]] = t[1]; });
+function tipoDe(nov){
+  for(var i=0;i<TIPOS.length-1;i++){ if((nov||'').indexOf(TIPOS[i][0]) >= 0) return TIPOS[i][0]; }
+  return 'Otras';
+}
+
+// ---------- lector de informes ----------
+// Entiende las líneas del informe de MedidorClic:
+//   📅 14/10/2026 · 12:40 hs
+//   *REMESA 3 · RUTA 505* · 5 novedades
+//   3. 09:12 · Med 00019620 · Lect 0452 · Apagado · 📍-27.46712,-58.83411
+function leerInformes(texto){
+  var puntos = [], fecha = '', remesa = '', ruta = '';
+  texto.split(/\r?\n/).forEach(function(linea){
+    linea = linea.replace(/^\[[^\]]*\]\s*[^:]*:\s*/, '').trim();   // saca "[12:40, 14/10] Juan:" si viene copiado así
+    var mF = linea.match(/📅\s*(\d{1,2}\/\d{1,2}\/\d{4})/);
+    if(mF){ fecha = mF[1]; return; }
+    var mR = linea.match(/REMESA\s+(\S+)\s*·\s*RUTA\s+([^*·]+)/i);
+    if(mR){ remesa = mR[1]; ruta = mR[2].trim(); return; }
+    var mD = linea.match(/^\d+\.\s+(?:(\d{1,2}\/\d{1,2})\s+)?(\d{1,2}:\d{2})\s+·\s+Med\s+(\S+)(.*)$/);
+    if(!mD) return;
+    var resto = mD[4], lect = '', lat = null, lon = null;
+    var mG = resto.match(/📍\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)/);
+    if(mG){ lat = parseFloat(mG[1]); lon = parseFloat(mG[2]); resto = resto.replace(mG[0], ''); }
+    var mL = resto.match(/^\s*·\s*Lect\s+(\S+)/);
+    if(mL){ lect = mL[1]; resto = resto.slice(mL[0].length); }
+    var nov = resto.replace(/^\s*·\s*/, '').replace(/\s*·\s*$/, '').trim();
+    puntos.push({ fecha: mD[1] ? mD[1] : fecha, hora: mD[2], med: mD[3], lect: lect, nov: nov,
+                  remesa: remesa, ruta: ruta, lat: lat, lon: lon, tipo: tipoDe(nov) });
+  });
+  return puntos;
+}
+
+// ---------- mapa ----------
+var mapa = null, capa = null, puntos = [], apagados = {};
+function iniciarMapa(){
+  if(mapa || !window.L) return;
+  mapa = L.map('mapa').setView([-27.4692, -58.8306], 13);   // Corrientes capital
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19, attribution: '&copy; OpenStreetMap'
+  }).addTo(mapa);
+  capa = L.layerGroup().addTo(mapa);
+}
+function esc(t){ return String(t).replace(/[&<>"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+
+function dibujar(ajustar){
+  var conGps = puntos.filter(function(p){ return p.lat !== null; });
+  var sin = puntos.filter(function(p){ return p.lat === null; });
+  // leyenda con conteos
+  var cuenta = {}; puntos.forEach(function(p){ cuenta[p.tipo] = (cuenta[p.tipo]||0) + 1; });
+  var ley = document.getElementById('leyenda'); ley.innerHTML = '';
+  TIPOS.forEach(function(t){
+    if(!cuenta[t[0]]) return;
+    var d = document.createElement('span');
+    d.className = 'ley' + (apagados[t[0]] ? ' off' : '');
+    d.innerHTML = '<span class="pto" style="background:' + t[1] + '"></span>' + esc(t[0]) + ' <span class="n">' + cuenta[t[0]] + '</span>';
+    d.title = 'Tocá para mostrar u ocultar';
+    d.addEventListener('click', function(){ apagados[t[0]] = !apagados[t[0]]; dibujar(false); });
+    ley.appendChild(d);
+  });
+  // resumen
+  var rutas = {}; puntos.forEach(function(p){ rutas[p.remesa + '|' + p.ruta] = 1; });
+  document.getElementById('resumen').innerHTML = puntos.length
+    ? '<b>' + puntos.length + '</b> novedades en <b>' + Object.keys(rutas).length + '</b> ruta(s) · <b>' + conGps.length + '</b> con ubicación en el mapa'
+    : 'No encontré novedades con detalle en lo que pegaste. Revisá que sea el informe de ruta de MedidorClic.';
+  // sin gps
+  var ul = document.getElementById('sinGps'); ul.innerHTML = '';
+  sin.forEach(function(p){
+    var li = document.createElement('li');
+    li.textContent = 'R' + p.remesa + ' · Ruta ' + p.ruta + ' · ' + p.hora + ' · Med ' + p.med + ' · ' + p.nov;
+    ul.appendChild(li);
+  });
+  document.getElementById('cajaSinGps').hidden = !sin.length;
+  // puntos
+  if(!mapa){
+    if(puntos.length) document.getElementById('resumen').innerHTML += '<div class="aviso">El mapa necesita internet para cargarse.</div>';
+    return;
+  }
+  capa.clearLayers();
+  var limites = [];
+  conGps.forEach(function(p){
+    if(apagados[p.tipo]) return;
+    var m = L.circleMarker([p.lat, p.lon], { radius: 8, weight: 2, color: '#ffffff', fillColor: COLOR[p.tipo], fillOpacity: 0.95 });
+    m.bindPopup(
+      '<b>' + esc(p.nov || 'sin novedad escrita') + '</b><br>' +
+      'Remesa ' + esc(p.remesa) + ' · Ruta ' + esc(p.ruta) + '<br>' +
+      (p.fecha ? esc(p.fecha) + ' · ' : '') + esc(p.hora) + ' hs<br>' +
+      'Medidor ' + esc(p.med) + (p.lect ? ' · Lectura ' + esc(p.lect) : '') + '<br>' +
+      '<a href="https://www.google.com/maps?q=' + p.lat + ',' + p.lon + '" target="_blank" rel="noopener">Abrir en Google Maps</a>'
+    );
+    m.addTo(capa); limites.push([p.lat, p.lon]);
+  });
+  if(ajustar && limites.length) mapa.fitBounds(limites, { padding: [30, 30], maxZoom: 17 });
+}
+
+// ---------- ejemplo ----------
+function informeEjemplo(){
+  function pt(dlat, dlon){ return '📍' + (-27.4692 + dlat).toFixed(5) + ',' + (-58.8306 + dlon).toFixed(5); }
+  return [
+    '📋 *INFORME DE RUTA* · MedidorClic',
+    '📅 14/10/2026 · 12:38 hs',
+    '',
+    '*REMESA 3 · RUTA 505* · 7 novedades',
+    '• Apagado: 2', '• No imp: 2', '• Medidor Dañado: 1', '• Cambio de med.: 1', '• Otras novedades: 1',
+    'Detalle:',
+    '1. 08:12 · Med 00019620 · Lect 05213 · No imp · ' + pt(0.0031, -0.0042),
+    '2. 08:31 · Med s/n · Apagado · ' + pt(0.0027, -0.0019),
+    '3. 08:47 · Med 40199340 · Lect 00412 · Medidor Dañado · tapa rota · ' + pt(0.0018, 0.0006),
+    '4. 09:05 · Med 40200017 · Lect 00003 · Cambio de med. (med. anterior 31877264, lect. final 09981) · ' + pt(0.0009, 0.0024),
+    '5. 09:22 · Med s/n · No imp · ' + pt(-0.0004, 0.0041),
+    '6. 09:58 · Med 40201190 · Apagado',
+    '7. 10:15 · Med s/n · perro suelto · ' + pt(-0.0016, 0.0058),
+    '',
+    'Total: 7 novedades en 1 ruta',
+    '',
+    '📋 *INFORME DE RUTA* · MedidorClic',
+    '📅 14/10/2026 · 12:44 hs',
+    '',
+    '*REMESA 6 · RUTA 1204* · 6 novedades',
+    'Detalle:',
+    '1. 08:20 · Med 51022761 · Lect 11872 · Exceso de consumo · ' + pt(-0.0121, -0.0153),
+    '2. 08:44 · Med s/n · Disco trabado · ' + pt(-0.0109, -0.0131),
+    '3. 09:10 · Med 51023004 · Lect 02245 · Error de lectura (estado: visor empañado) · ' + pt(-0.0098, -0.0117),
+    '4. 09:41 · Med s/n · Giro al revés · ' + pt(-0.0087, -0.0102),
+    '5. 10:02 · Med 51023390 · Lect 08816 · Quiebre de consumo · ' + pt(-0.0079, -0.0084),
+    '6. 10:30 · Med s/n · Ord.13 Obras · ' + pt(-0.0066, -0.0071),
+    '',
+    'Total: 6 novedades en 1 ruta'
+  ].join('\n');
+}
+
+// ---------- botones ----------
+document.getElementById('btnVer').addEventListener('click', function(){
+  puntos = leerInformes(document.getElementById('entrada').value); apagados = {};
+  dibujar(true);
+});
+document.getElementById('btnEjemplo').addEventListener('click', function(){
+  document.getElementById('entrada').value = informeEjemplo();
+  puntos = leerInformes(informeEjemplo()); apagados = {};
+  dibujar(true);
+});
+document.getElementById('btnLimpiar').addEventListener('click', function(){
+  document.getElementById('entrada').value = ''; puntos = []; apagados = {};
+  if(capa) capa.clearLayers();
+  document.getElementById('leyenda').innerHTML = '';
+  document.getElementById('cajaSinGps').hidden = true;
+  document.getElementById('resumen').textContent = 'Todavía no hay informes cargados.';
+});
+
+iniciarMapa();
+// arranca mostrando el ejemplo, para ver cómo funciona
+document.getElementById('btnEjemplo').click();
+</script>
+</body>
+</html>
