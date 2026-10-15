@@ -290,7 +290,7 @@
   <div class="logo">DP</div>
   <div>
     <h1>MedidorClic</h1>
-    <div class="sub">Sello de remesa · ruta · novedad · v53</div>
+    <div class="sub">Sello de remesa · ruta · novedad · v54</div>
   </div>
   <button type="button" class="btn-informe" id="btnInforme">📋 Informe</button>
 </header>
@@ -398,6 +398,7 @@
           <button type="button" class="chip" data-txt="Apagado"><span class="chip-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v8"/><path d="M6.6 6.6a8 8 0 1 0 10.8 0"/></svg></span>Apagado</button>
           <button type="button" class="chip" data-txt="Exceso de consumo"><span class="chip-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg></span>Exceso de consumo</button>
           <button type="button" class="chip" data-txt="45/5 primera vez"><span class="chip-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 21V4"/><path d="M5 4h11l-2 4 2 4H5"/></svg></span>45/5 primera vez</button>
+          <button type="button" class="chip" data-txt="Error 45/5"><span class="chip-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 21V4"/><path d="M5 4h11l-2 4 2 4H5"/><path d="M15 16l5 5M20 16l-5 5"/></svg></span>Error 45/5</button>
           <button type="button" class="chip" data-txt="Ver baja"><span class="chip-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></span>Ver baja</button>
           <button type="button" class="chip" data-txt="Lec. Menor"><span class="chip-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v15"/><path d="M6 13l6 6 6-6"/></svg></span>Lec. Menor</button>
           <button type="button" class="chip" data-txt="Cambio de med."><span class="chip-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h13l-3-3"/><path d="M20 15H7l3 3"/></svg></span>Cambio de med.</button>
@@ -2569,7 +2570,7 @@ return {QRCode:R("index"),ECL:R("QRErrorCorrectLevel")};})();
   var CLAVE_REG = 'mc_registro_envios_v1';
   var CLAVE_ULT = 'mc_ultimo_informe_v1';
   var CHIPS_INF = ['No imp','Alta','Apagado','Exceso de consumo','45/5 primera vez','Ver baja','Lec. Menor',
-                   'Cambio de med.','Medidor Dañado','Quiebre de consumo','Error de lectura','Giro al revés','Disco trabado','Display dañado/opaco','Ord.13 Obras'];
+                   'Cambio de med.','Medidor Dañado','Quiebre de consumo','Error de lectura','Error 45/5','Giro al revés','Disco trabado','Display dañado/opaco','Ord.13 Obras'];
   var btnInforme   = document.getElementById('btnInforme');
   var informeFondo = document.getElementById('informeFondo');
   var informeSub   = document.getElementById('informeSub');
@@ -2662,7 +2663,7 @@ return {QRCode:R("index"),ECL:R("QRErrorCorrectLevel")};})();
 
   // =============== mapa del informe (imagen que acompaña el mensaje) ===============
   var TIPOS_MAPA = [
-    ['Apagado','#FF4D4D'], ['No imp','#FFC53D'], ['Medidor Dañado','#FF8A3D'], ['Error de lectura','#D64DFF'],
+    ['Apagado','#FF4D4D'], ['No imp','#FFC53D'], ['Medidor Dañado','#FF8A3D'], ['Error de lectura','#D64DFF'], ['Error 45/5','#B91C1C'],
     ['Cambio de med.','#3D8BFF'], ['Exceso de consumo','#22C55E'], ['Quiebre de consumo','#14B8A6'],
     ['Lec. Menor','#60A5FA'], ['Giro al revés','#A855F7'], ['Disco trabado','#8B5E3C'], ['Display dañado/opaco','#EC4899'], ['Alta','#10B981'],
     ['45/5 primera vez','#EAB308'], ['Ver baja','#6366F1'], ['Ord.13 Obras','#F97316'], ['Otras','#6B7280']
