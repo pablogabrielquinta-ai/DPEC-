@@ -108,6 +108,7 @@
     font-family:ui-monospace,Menlo,monospace;
   }
   .cod-visor.visible{display:block;}
+  .cod-visor div + div{margin-top:3px;}
   .scan-hint{
     position:absolute;left:0;right:0;top:0;
     padding:10px;background:rgba(0,0,0,0.6);
@@ -290,7 +291,7 @@
   <div class="logo">DP</div>
   <div>
     <h1>MedidorClic</h1>
-    <div class="sub">Sello de remesa · ruta · novedad · v54</div>
+    <div class="sub">Sello de remesa · ruta · novedad · v55</div>
   </div>
   <button type="button" class="btn-informe" id="btnInforme">📋 Informe</button>
 </header>
@@ -382,6 +383,14 @@
         <div style="display:flex;gap:8px;">
           <input type="text" id="medidor" inputmode="numeric" placeholder="Escanealo o escribilo" style="flex:1;">
           <button type="button" id="btnEscanear" class="btn-escanear">|||&nbsp;Escanear</button>
+        </div>
+      </div>
+
+      <div class="campo">
+        <label for="modulo">N° de módulo (opcional)</label>
+        <div style="display:flex;gap:8px;">
+          <input type="text" id="modulo" placeholder="Se lee solo con la foto" style="flex:1;" autocapitalize="characters">
+          <button type="button" id="btnEscanearModulo" class="btn-escanear">|||&nbsp;Escanear</button>
         </div>
       </div>
 
@@ -1735,6 +1744,8 @@ return {QRCode:R("index"),ECL:R("QRErrorCorrectLevel")};})();
   var btnDisparo  = document.getElementById('btnDisparo');
   var btnCerrarCam= document.getElementById('btnCerrarCam');
   var inpMedidor  = document.getElementById('medidor');
+  var inpModulo   = document.getElementById('modulo');
+  var btnEscanearModulo = document.getElementById('btnEscanearModulo');
   var btnEscanear = document.getElementById('btnEscanear');
   var scanHint    = document.getElementById('scanHint');
   var inpLectura  = document.getElementById('lectura');
@@ -1752,7 +1763,8 @@ return {QRCode:R("index"),ECL:R("QRErrorCorrectLevel")};})();
   var gps         = null;   // {lat, lon} o null
   var timerRender = null;
   var modoCamara  = 'foto';   // 'foto' o 'scan'
-  var codigoVisor = '';       // código leído solo en el visor, para la foto que se va a sacar
+  var codigoVisor = '';
+  var moduloVisor = '';       // código de módulo leído en el visor       // código leído solo en el visor, para la foto que se va a sacar
   var autoTimer   = null;
   var scanTimer   = null;
   var detector    = null;
@@ -1819,6 +1831,7 @@ return {QRCode:R("index"),ECL:R("QRErrorCorrectLevel")};})();
         remesa: selRemesa.value,
         ruta: inpRuta.value,
         medidor: inpMedidor.value,
+        modulo: inpModulo.value,
         medidorNuevo: inpMedidorNuevo.value,
         lecturaNueva: inpLecturaNueva.value,
         estadoLectura: inpEstadoLectura.value,
@@ -1852,6 +1865,7 @@ return {QRCode:R("index"),ECL:R("QRErrorCorrectLevel")};})();
       if(s.remesa) selRemesa.value = s.remesa;
       poblarRutas(selRemesa.value, s.ruta || null);
       if(s.medidor) inpMedidor.value = s.medidor;
+      if(s.modulo) inpModulo.value = s.modulo;
       if(s.medidorNuevo){ inpMedidorNuevo.value = s.medidorNuevo; bloqueCambioMedidor.style.display = 'block'; }
       if(s.estadoLectura){ inpEstadoLectura.value = s.estadoLectura; bloqueErrorLectura.style.display = 'block'; }
       if(s.lecturaNueva){ inpLecturaNueva.value = s.lecturaNueva; bloqueCambioMedidor.style.display = 'block'; }
@@ -1954,10 +1968,11 @@ return {QRCode:R("index"),ECL:R("QRErrorCorrectLevel")};})();
     if(fotos.length === 1){
       fotoDataURL = off.toDataURL('image/jpeg', 0.8);
       fechaFoto = new Date();
-      inpMedidor.value = codigoVisor; inpMedidorNuevo.value = ''; inpLecturaNueva.value = ''; bloqueCambioMedidor.style.display = 'none'; inpEstadoLectura.value = ''; bloqueErrorLectura.style.display = 'none'; inpLectura.value = ''; txtDesc.value = ''; marcarChips(); // blindaje: primera foto de una novedad nueva, siempre arranca vacío (medidor, lectura, novedad y chips)
+      inpMedidor.value = codigoVisor; inpModulo.value = moduloVisor; inpMedidorNuevo.value = ''; inpLecturaNueva.value = ''; bloqueCambioMedidor.style.display = 'none'; inpEstadoLectura.value = ''; bloqueErrorLectura.style.display = 'none'; inpLectura.value = ''; txtDesc.value = ''; marcarChips(); // blindaje: primera foto de una novedad nueva, siempre arranca vacío (medidor, lectura, novedad y chips)
     }
     if(fotos.length === 2 && codigoVisor && !inpMedidor.value.trim()) inpMedidor.value = codigoVisor;
-    codigoVisor = '';
+    if(fotos.length === 2 && moduloVisor && !inpModulo.value.trim()) inpModulo.value = moduloVisor;
+    codigoVisor = ''; moduloVisor = '';
     cerrarCamara();
     mostrarEdicion();
     pedirGps();
@@ -2072,37 +2087,57 @@ return {QRCode:R("index"),ECL:R("QRErrorCorrectLevel")};})();
     try{ return new BarcodeDetector({ formats: ['code_128','code_39','itf','ean_13','ean_8','upc_a','upc_e','codabar','qr_code','data_matrix'] }); }
     catch(e){ try{ return new BarcodeDetector(); }catch(e2){ return null; } }
   }
+  // código del módulo de telemedición: empieza con letra (ej. R004005); el medidor es solo números
+  function limpiarCodigo(v){ return (v || '').replace(/\*/g, '').trim(); }
+  function esModulo(v){ return /^[A-Za-z]/.test(v); }
+  function pintarVisor(){
+    var el = codVisorEl(), h = '';
+    if(codigoVisor) h += '<div>Medidor ' + codigoVisor + '</div>';
+    if(moduloVisor) h += '<div>Módulo ' + moduloVisor + '</div>';
+    el.innerHTML = h; el.classList.toggle('visible', !!h);
+  }
   function iniciarAutoScan(){
     clearInterval(autoTimer); autoTimer = null;
-    codigoVisor = '';
-    codVisorEl().classList.remove('visible');
-    // solo para la primera foto, o si todavía no hay número cargado
-    if(fotos.length && inpMedidor.value.trim()) return;
+    codigoVisor = ''; moduloVisor = '';
+    pintarVisor();
+    var faltaMed = !(fotos.length && inpMedidor.value.trim());
+    var faltaMod = !(fotos.length && inpModulo.value.trim());
+    if(!faltaMed && !faltaMod) return;
     var det = crearDetector(); if(!det) return;
-    var ocupado = false;
+    var ocupado = false, limite = 0;
     autoTimer = setInterval(function(){
+      if(limite && Date.now() > limite){ clearInterval(autoTimer); autoTimer = null; return; }
       if(ocupado || !stream || !video.videoWidth) return;
       ocupado = true;
       det.detect(video).then(function(codigos){
         ocupado = false;
         if(!autoTimer || !codigos || !codigos.length) return;
-        var val = (codigos[0].rawValue || '').trim();
-        if(!val) return;
-        clearInterval(autoTimer); autoTimer = null;   // ya está: deja de buscar
-        codigoVisor = val;
+        var nuevo = false;
+        codigos.forEach(function(c){
+          var v = limpiarCodigo(c.rawValue); if(!v) return;
+          if(esModulo(v)){ if(faltaMod && !moduloVisor){ moduloVisor = v; nuevo = true; } }
+          else if(faltaMed && !codigoVisor){ codigoVisor = v; nuevo = true; }
+        });
+        if(!nuevo) return;
         if(navigator.vibrate) navigator.vibrate(120);
-        var el = codVisorEl(); el.textContent = 'Medidor ' + val; el.classList.add('visible');
+        pintarVisor();
+        var listoMed = !faltaMed || codigoVisor, listoMod = !faltaMod || moduloVisor;
+        if(listoMed && listoMod){ clearInterval(autoTimer); autoTimer = null; }   // ya están los dos
+        else if(codigoVisor && !limite){ limite = Date.now() + 6000; }           // hay medidor: busca el módulo unos segundos más
       }).catch(function(){ ocupado = false; });
     }, 400);
   }
   function leerCodigoDeImagen(fuente){
     var det = crearDetector(); if(!det) return;
     det.detect(fuente).then(function(codigos){
-      if(!codigos || !codigos.length || inpMedidor.value.trim()) return;
-      var val = (codigos[0].rawValue || '').trim(); if(!val) return;
-      inpMedidor.value = val;
-      if(navigator.vibrate) navigator.vibrate(120);
-      pedirRender();
+      if(!codigos || !codigos.length) return;
+      var cambio = false;
+      codigos.forEach(function(c){
+        var v = limpiarCodigo(c.rawValue); if(!v) return;
+        if(esModulo(v)){ if(!inpModulo.value.trim()){ inpModulo.value = v; cambio = true; } }
+        else if(!inpMedidor.value.trim()){ inpMedidor.value = v; cambio = true; }
+      });
+      if(cambio){ if(navigator.vibrate) navigator.vibrate(120); pedirRender(); }
     }).catch(function(){});
   }
 
@@ -2117,6 +2152,7 @@ return {QRCode:R("index"),ECL:R("QRErrorCorrectLevel")};})();
     abrirCamara('scan');
   }
   btnEscanear.addEventListener('click', function(){ pedirEscaneo(inpMedidor); });
+  btnEscanearModulo.addEventListener('click', function(){ pedirEscaneo(inpModulo); });
 
   function iniciarEscaneo(){
     try{
@@ -2129,8 +2165,12 @@ return {QRCode:R("index"),ECL:R("QRErrorCorrectLevel")};})();
       if(!stream || !video.videoWidth) return;
       detector.detect(video).then(function(codigos){
         if(!codigos || !codigos.length) return;
-        var val = (codigos[0].rawValue || '').trim();
-        if(!val) return;
+        var quiereModulo = (scanDestino === inpModulo), val = '';
+        codigos.forEach(function(c){
+          var v = limpiarCodigo(c.rawValue);
+          if(v && !val && esModulo(v) === quiereModulo) val = v;
+        });
+        if(!val) return;   // todavía no apareció el código que corresponde a este campo
         clearInterval(scanTimer); scanTimer = null;
         if(navigator.vibrate) navigator.vibrate(120);
         (scanDestino || inpMedidor).value = val;
@@ -2168,7 +2208,7 @@ return {QRCode:R("index"),ECL:R("QRErrorCorrectLevel")};})();
       if(fotos.length === 1){
         fotoDataURL = off.toDataURL('image/jpeg', 0.8);
         fechaFoto = new Date();
-        inpMedidor.value = ''; inpMedidorNuevo.value = ''; inpLecturaNueva.value = ''; bloqueCambioMedidor.style.display = 'none'; inpEstadoLectura.value = ''; bloqueErrorLectura.style.display = 'none'; inpLectura.value = ''; txtDesc.value = ''; marcarChips(); // blindaje: primera foto de una novedad nueva, siempre arranca vacío (medidor, lectura, novedad y chips)
+        inpMedidor.value = ''; inpModulo.value = ''; inpMedidorNuevo.value = ''; inpLecturaNueva.value = ''; bloqueCambioMedidor.style.display = 'none'; inpEstadoLectura.value = ''; bloqueErrorLectura.style.display = 'none'; inpLectura.value = ''; txtDesc.value = ''; marcarChips(); // blindaje: primera foto de una novedad nueva, siempre arranca vacío (medidor, lectura, novedad y chips)
       }
       inputFoto.value = '';
       leerCodigoDeImagen(off);
@@ -2200,6 +2240,7 @@ return {QRCode:R("index"),ECL:R("QRErrorCorrectLevel")};})();
   // =============== sello ===============
   inpRuta.addEventListener('change', function(){ guardarMem(); pedirRender(); });
   inpMedidor.addEventListener('input', function(){ pedirRender(); });
+  inpModulo.addEventListener('input', function(){ pedirRender(); });
   inpLectura.addEventListener('input', function(){ pedirRender(); });
   txtDesc.addEventListener('input', function(){ marcarChips(); guardarMem(); pedirRender(); });
 
@@ -2297,6 +2338,7 @@ return {QRCode:R("index"),ECL:R("QRErrorCorrectLevel")};})();
     if(a.length) l.push(a.join(' | '));
     a = [];
     if(inpMedidor.value.trim()) a.push('Medidor ' + inpMedidor.value.trim());
+    if(inpModulo.value.trim()) a.push('Modulo ' + inpModulo.value.trim());
     if(inpLectura.value.trim()) a.push('Lectura ' + inpLectura.value.trim());
     if(a.length) l.push(a.join(' | '));
     a = [];
@@ -2361,6 +2403,7 @@ return {QRCode:R("index"),ECL:R("QRErrorCorrectLevel")};})();
     var estadoLectura = inpEstadoLectura.value.trim();
     var linea2 = [];
     if(medidor) linea2.push('MEDIDOR ' + medidor);
+    if(inpModulo.value.trim()) linea2.push('MÓDULO ' + inpModulo.value.trim());
     if(lectura) linea2.push('LECTURA ' + lectura);
     if(medidorNuevo) linea2.push('MED.ANTERIOR ' + medidorNuevo);
     if(lecturaNueva) linea2.push('LECT.FINAL ' + lecturaNueva);
@@ -2513,6 +2556,7 @@ return {QRCode:R("index"),ECL:R("QRErrorCorrectLevel")};})();
     if(selRemesa.value) t.push('Remesa ' + selRemesa.value);
     if(inpRuta.value.trim()) t.push('Ruta ' + inpRuta.value.trim());
     if(inpMedidor.value.trim()) t.push('Medidor ' + inpMedidor.value.trim());
+    if(inpModulo.value.trim()) t.push('Módulo ' + inpModulo.value.trim());
     if(inpLectura.value.trim()) t.push('Lectura ' + inpLectura.value.trim());
     if(inpMedidorNuevo.value.trim()) t.push('Medidor anterior ' + inpMedidorNuevo.value.trim());
     if(inpLecturaNueva.value.trim()) t.push('Lectura final ' + inpLecturaNueva.value.trim());
@@ -2539,6 +2583,7 @@ return {QRCode:R("index"),ECL:R("QRErrorCorrectLevel")};})();
     txtDesc.value = '';
     marcarChips();
     inpMedidor.value = '';
+    inpModulo.value = '';
     inpLectura.value = '';
     inpMedidorNuevo.value = '';
     inpLecturaNueva.value = '';
@@ -2591,7 +2636,7 @@ return {QRCode:R("index"),ECL:R("QRErrorCorrectLevel")};})();
     r.push({
       t: Date.now(),
       remesa: selRemesa.value, ruta: inpRuta.value.trim(),
-      med: inpMedidor.value.trim(), lect: inpLectura.value.trim(),
+      med: inpMedidor.value.trim(), mod: inpModulo.value.trim(), lect: inpLectura.value.trim(),
       nov: txtDesc.value.trim(),
       medAnt: inpMedidorNuevo.value.trim(), lectFin: inpLecturaNueva.value.trim(),
       estado: inpEstadoLectura.value.trim(),
@@ -2647,6 +2692,7 @@ return {QRCode:R("index"),ECL:R("QRErrorCorrectLevel")};})();
         var l = num + '. ' + (mismoDia ? '' : dosDig(d.getDate()) + '/' + dosDig(d.getMonth()+1) + ' ') +
                 dosDig(d.getHours()) + ':' + dosDig(d.getMinutes());
         l += ' · Med ' + (e.med || 's/n');
+        if(e.mod) l += ' · Mód ' + e.mod;
         if(e.lect) l += ' · Lect ' + e.lect;
         l += ' · ' + (e.nov || 'sin novedad escrita');
         if(e.medAnt || e.lectFin) l += ' (med. anterior ' + (e.medAnt || 's/n') + (e.lectFin ? ', lect. final ' + e.lectFin : '') + ')';

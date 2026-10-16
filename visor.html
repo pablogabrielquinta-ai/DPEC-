@@ -107,10 +107,12 @@ function leerInformes(texto){
     var resto = mD[4], lect = '', lat = null, lon = null;
     var mG = resto.match(/📍\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)/);
     if(mG){ lat = parseFloat(mG[1]); lon = parseFloat(mG[2]); resto = resto.replace(mG[0], ''); }
+    var mod = '', mM = resto.match(/^\s*·\s*Mód\s+(\S+)/);
+    if(mM){ mod = mM[1]; resto = resto.slice(mM[0].length); }
     var mL = resto.match(/^\s*·\s*Lect\s+(\S+)/);
     if(mL){ lect = mL[1]; resto = resto.slice(mL[0].length); }
     var nov = resto.replace(/^\s*·\s*/, '').replace(/\s*·\s*$/, '').trim();
-    puntos.push({ fecha: mD[1] ? mD[1] : fecha, hora: mD[2], med: mD[3], lect: lect, nov: nov,
+    puntos.push({ fecha: mD[1] ? mD[1] : fecha, hora: mD[2], med: mD[3], mod: mod, lect: lect, nov: nov,
                   remesa: remesa, ruta: ruta, lat: lat, lon: lon, tipo: tipoDe(nov) });
   });
   return puntos;
@@ -170,7 +172,7 @@ function dibujar(ajustar){
       '<b>' + esc(p.nov || 'sin novedad escrita') + '</b><br>' +
       'Remesa ' + esc(p.remesa) + ' · Ruta ' + esc(p.ruta) + '<br>' +
       (p.fecha ? esc(p.fecha) + ' · ' : '') + esc(p.hora) + ' hs<br>' +
-      'Medidor ' + esc(p.med) + (p.lect ? ' · Lectura ' + esc(p.lect) : '') + '<br>' +
+      'Medidor ' + esc(p.med) + (p.mod ? ' · Módulo ' + esc(p.mod) : '') + (p.lect ? ' · Lectura ' + esc(p.lect) : '') + '<br>' +
       '<a href="https://www.google.com/maps?q=' + p.lat + ',' + p.lon + '" target="_blank" rel="noopener">Abrir en Google Maps</a>'
     );
     m.addTo(capa); limites.push([p.lat, p.lon]);
