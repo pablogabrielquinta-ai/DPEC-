@@ -291,7 +291,7 @@
   <div class="logo">DP</div>
   <div>
     <h1>MedidorClic</h1>
-    <div class="sub">Sello de remesa · ruta · novedad · v55</div>
+    <div class="sub">Sello de remesa · ruta · novedad · v56</div>
   </div>
   <button type="button" class="btn-informe" id="btnInforme">📋 Informe</button>
 </header>
@@ -300,8 +300,9 @@
   <div class="informe-panel">
     <h2>Informe de ruta</h2>
     <div class="sub2" id="informeSub"></div>
-    <img id="informeMapa" alt="Mapa de las novedades" style="display:none;width:100%;border-radius:10px;border:1px solid var(--line);margin-bottom:10px;max-height:38vh;object-fit:contain;background:#0e1216;">
+    <img id="informeMapa" alt="Mapa de las novedades" style="display:none;width:100%;border-radius:10px;border:1px solid var(--line);margin-bottom:10px;max-height:52vh;object-fit:contain;background:#0e1216;">
     <div class="informe-pre" id="informeTexto"></div>
+    <button type="button" class="informe-link" id="btnVerDetalle" style="margin:-4px 0 10px;display:none;">Ver detalle por medidor ▾</button>
     <div class="informe-botones">
       <button type="button" class="btn-sec" id="btnInformeCerrar">Volver</button>
       <button type="button" class="btn-compartir" id="btnInformeEnviar">Enviar ➤ WhatsApp</button>
@@ -2657,7 +2658,7 @@ return {QRCode:R("index"),ECL:R("QRErrorCorrectLevel")};})();
     btnInforme.classList.toggle('pendiente', pendiente);
   }
 
-  function armarInforme(reg){
+  function armarInforme(reg, conDetalle){
     var ahora = new Date();
     var hoyTxt = dosDig(ahora.getDate()) + '/' + dosDig(ahora.getMonth()+1) + '/' + ahora.getFullYear();
     var grupos = {}, orden = [];
@@ -2684,9 +2685,10 @@ return {QRCode:R("index"),ECL:R("QRErrorCorrectLevel")};})();
       t.push('');
       t.push('*REMESA ' + rr[0] + ' · RUTA ' + rr[1] + '* · ' + lista.length + (lista.length === 1 ? ' novedad' : ' novedades'));
       res.forEach(function(r){ t.push(r); });
-      t.push('Detalle:');
+      if(conDetalle) t.push('Detalle:');
       lista.forEach(function(e){
         num++;
+        if(!conDetalle) return;
         var d = new Date(e.t);
         var mismoDia = d.toDateString() === ahora.toDateString();
         var l = num + '. ' + (mismoDia ? '' : dosDig(d.getDate()) + '/' + dosDig(d.getMonth()+1) + ' ') +
@@ -2711,7 +2713,7 @@ return {QRCode:R("index"),ECL:R("QRErrorCorrectLevel")};})();
   var TIPOS_MAPA = [
     ['Apagado','#FF4D4D'], ['No imp','#FFC53D'], ['Medidor Dañado','#FF8A3D'], ['Error de lectura','#D64DFF'], ['Error 45/5','#B91C1C'],
     ['Cambio de med.','#3D8BFF'], ['Exceso de consumo','#22C55E'], ['Quiebre de consumo','#14B8A6'],
-    ['Lec. Menor','#60A5FA'], ['Giro al revés','#A855F7'], ['Disco trabado','#8B5E3C'], ['Display dañado/opaco','#EC4899'], ['Alta','#10B981'],
+    ['Lec. Menor','#60A5FA'], ['Giro al revés','#A855F7'], ['Disco trabado','#8B5E3C'], ['Display dañado/opaco','#EC4899'], ['Alta','#A3E635'],
     ['45/5 primera vez','#EAB308'], ['Ver baja','#6366F1'], ['Ord.13 Obras','#F97316'], ['Otras','#6B7280']
   ];
   function tipoMapa(nov){
@@ -2830,6 +2832,8 @@ return {QRCode:R("index"),ECL:R("QRErrorCorrectLevel")};})();
     informeTexto.textContent = texto;
     var ult = null; try{ ult = localStorage.getItem(CLAVE_ULT); }catch(e){}
     btnInformeUltimo.style.display = (!reenvio && ult) ? '' : 'none';
+    btnVerDetalle.style.display = reenvio ? 'none' : '';
+    btnVerDetalle.textContent = 'Ver detalle por medidor ▾';
     informeFondo.classList.add('visible');
   }
   function cerrarInforme(){ informeFondo.classList.remove('visible'); }
@@ -2842,7 +2846,8 @@ return {QRCode:R("index"),ECL:R("QRErrorCorrectLevel")};})();
       else { mostrarAviso('Todavía no hay envíos para informar. Cada foto que compartas queda anotada para el informe.'); }
       return;
     }
-    var inf = armarInforme(reg);
+    regInforme = reg; conDetalleInf = false;
+    var inf = armarInforme(reg, false);
     abrirInforme(inf.texto, reg.length + ' envíos · ' + inf.rutas + (inf.rutas === 1 ? ' ruta' : ' rutas') + ' · así llega al grupo', false);
     var imgM = document.getElementById('informeMapa');
     var conGps = reg.filter(function(e){ return e.lat != null; }).length;
@@ -2856,6 +2861,17 @@ return {QRCode:R("index"),ECL:R("QRErrorCorrectLevel")};})();
         if(b){ imgM.src = URL.createObjectURL(b); imgM.style.display = 'block'; }
       });
     }
+  });
+  // detalle por medidor: solo si lo piden (y si está abierto, también se manda)
+  var btnVerDetalle = document.getElementById('btnVerDetalle');
+  var regInforme = null, conDetalleInf = false;
+  btnVerDetalle.addEventListener('click', function(){
+    if(!regInforme || esReenvio) return;
+    conDetalleInf = !conDetalleInf;
+    textoInforme = armarInforme(regInforme, conDetalleInf).texto;
+    informeTexto.textContent = textoInforme;
+    btnVerDetalle.textContent = conDetalleInf ? 'Ocultar detalle ▴ · abierto, se manda con el informe' : 'Ver detalle por medidor ▾';
+    pasoMapa = null; btnInformeEnviar.textContent = 'Enviar ➤ WhatsApp';
   });
   btnInformeCerrar.addEventListener('click', cerrarInforme);
   informeFondo.addEventListener('click', function(ev){ if(ev.target === informeFondo) cerrarInforme(); });
